@@ -35,9 +35,7 @@ export const Flow = () => {
                layer: props => (
                     <LayerNode data={props.data} selected={props.id === selectedNodeId} />
                ),
-               intersection: props => (
-                    <IntersectionNode data={props.data} selected={props.id === selectedNodeId} />
-               ),
+               intersection: props => <IntersectionNode selected={props.id === selectedNodeId} />,
           }),
           [selectedNodeId, updateNodeData]
      );

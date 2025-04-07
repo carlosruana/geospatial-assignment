@@ -9,9 +9,10 @@ import {
      Node,
      Edge,
 } from '@xyflow/react';
-import { NodeType, SourceNodeData, LayerNodeData } from '../types/flow';
+import { NodeType, SourceNodeData, LayerNodeData, IntersectionNodeData } from '../types/flow';
 import { STORAGE_KEY } from '../constants/flow';
 import { isValidUrl } from '../utils/validation';
+import { performIntersection } from '../utils/geospatial';
 
 const isLocalStorageAvailable = () => {
      try {
@@ -83,6 +84,8 @@ export const useFlow = () => {
      const onConnect = useCallback(
           (params: Connection) => {
                const sourceNode = nodes.find(node => node.id === params.source);
+               const targetNode = nodes.find(node => node.id === params.target);
+
                if (sourceNode?.type === 'source') {
                     const sourceData = sourceNode.data as unknown as SourceNodeData;
                     if (!isValidUrl(sourceData.url)) {
@@ -90,14 +93,74 @@ export const useFlow = () => {
                          return;
                     }
                }
-               setEdges(eds => addEdge(params, eds));
-               saveToLocalStorage();
+
+               // Check if target is an intersection node
+               if (targetNode?.type === 'intersection') {
+                    // Get all incoming edges to the intersection node
+                    const incomingEdges = edges.filter(edge => edge.target === targetNode.id);
+
+                    // If this is the first connection, allow it
+                    if (incomingEdges.length === 0) {
+                         setEdges(eds => addEdge(params, eds));
+                         saveToLocalStorage();
+                         return;
+                    }
+
+                    // If this is the second connection, perform the intersection
+                    if (incomingEdges.length === 1) {
+                         const firstSourceNode = nodes.find(
+                              node => node.id === incomingEdges[0].source
+                         );
+
+                         if (firstSourceNode?.type === 'layer' && sourceNode?.type === 'layer') {
+                              const firstLayerData =
+                                   firstSourceNode.data as unknown as LayerNodeData;
+                              const secondLayerData = sourceNode.data as unknown as LayerNodeData;
+
+                              // Perform the intersection
+                              const result = performIntersection(
+                                   firstLayerData.geometry,
+                                   secondLayerData.geometry
+                              );
+
+                              if (result) {
+                                   // Create a new layer node with the result
+                                   const newLayerNode: Node = {
+                                        id: `layer-${Date.now()}`,
+                                        type: 'layer',
+                                        position: {
+                                             x: targetNode.position.x + 200,
+                                             y: targetNode.position.y,
+                                        },
+                                        data: {
+                                             layerId: Date.now(),
+                                             geometry: result,
+                                        },
+                                   };
+
+                                   setNodes(nds => [...nds, newLayerNode]);
+                                   setEdges(eds => addEdge(params, eds));
+                                   saveToLocalStorage();
+                              } else {
+                                   console.warn('Intersection operation failed');
+                              }
+                         }
+                    } else {
+                         console.warn('Intersection node can only have two inputs');
+                    }
+               } else {
+                    setEdges(eds => addEdge(params, eds));
+                    saveToLocalStorage();
+               }
           },
-          [nodes, saveToLocalStorage]
+          [nodes, edges, saveToLocalStorage]
      );
 
      const updateNodeData = useCallback(
-          (nodeId: string, data: Partial<SourceNodeData | LayerNodeData>) => {
+          (
+               nodeId: string,
+               data: Partial<SourceNodeData | LayerNodeData | IntersectionNodeData>
+          ) => {
                setNodes(nds =>
                     nds.map(node => {
                          if (node.id === nodeId) {
@@ -112,8 +175,9 @@ export const useFlow = () => {
                          return node;
                     })
                );
+               saveToLocalStorage();
           },
-          []
+          [saveToLocalStorage]
      );
 
      return {

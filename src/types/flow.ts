@@ -1,3 +1,5 @@
+import { Feature, Polygon, MultiPolygon } from 'geojson';
+
 export type NodeType = 'source' | 'layer' | 'intersection';
 
 export interface SourceNodeData {
@@ -6,10 +8,11 @@ export interface SourceNodeData {
 
 export interface LayerNodeData {
      layerId: number;
+     geometry: Feature<Polygon | MultiPolygon>;
 }
 
 export interface IntersectionNodeData {
-     operation: 'intersection' | 'difference' | 'union';
+     operation: 'intersection';
 }
 
 export interface CustomNode {
