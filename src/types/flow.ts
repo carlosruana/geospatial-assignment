@@ -4,14 +4,17 @@ export type NodeType = 'source' | 'layer' | 'intersection';
 
 export interface SourceNodeData {
      url: string;
+     [key: string]: unknown;
 }
 
 export interface LayerNodeData {
-     // Add layer-specific data here
+     layerId: string;
+     [key: string]: unknown;
 }
 
 export interface IntersectionNodeData {
-     // Add intersection-specific data here
+     sourceIds: string[];
+     [key: string]: unknown;
 }
 
 export type CustomNode = Node<SourceNodeData | LayerNodeData | IntersectionNodeData>;
