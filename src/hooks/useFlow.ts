@@ -6,9 +6,12 @@ import {
      applyEdgeChanges,
      addEdge,
      Connection,
+     Node,
+     Edge,
 } from '@xyflow/react';
-import { CustomNode, CustomEdge, NodeType } from '../types/flow';
+import { NodeType, SourceNodeData, LayerNodeData } from '../types/flow';
 import { STORAGE_KEY } from '../constants/flow';
+import { isValidUrl } from '../utils/validation';
 
 const isLocalStorageAvailable = () => {
      try {
@@ -21,8 +24,8 @@ const isLocalStorageAvailable = () => {
 };
 
 export const useFlow = () => {
-     const [nodes, setNodes] = useState<CustomNode[]>([]);
-     const [edges, setEdges] = useState<CustomEdge[]>([]);
+     const [nodes, setNodes] = useState<Node[]>([]);
+     const [edges, setEdges] = useState<Edge[]>([]);
 
      const saveToLocalStorage = useCallback(() => {
           if (!isLocalStorageAvailable()) {
@@ -55,21 +58,22 @@ export const useFlow = () => {
      }, []);
 
      const onNodesChange = useCallback((changes: NodeChange[]) => {
-          setNodes(nds => applyNodeChanges(changes, nds) as CustomNode[]);
+          setNodes(nds => applyNodeChanges(changes, nds));
      }, []);
 
      const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-          setEdges(eds => applyEdgeChanges(changes, eds) as CustomEdge[]);
+          setEdges(eds => applyEdgeChanges(changes, eds));
      }, []);
 
      const addNode = useCallback(
           (type: NodeType, position: { x: number; y: number }) => {
-               const newNode: CustomNode = {
+               const newNode: Node = {
                     id: `${type}-${Date.now()}`,
                     type,
                     position,
-                    data: type === 'source' ? { url: '' } : { layerId: `layer-${Date.now()}` },
+                    data: type === 'source' ? { url: '' } : { layerId: Date.now() },
                };
+
                setNodes(nds => [...nds, newNode]);
                saveToLocalStorage();
           },
@@ -78,10 +82,38 @@ export const useFlow = () => {
 
      const onConnect = useCallback(
           (params: Connection) => {
+               const sourceNode = nodes.find(node => node.id === params.source);
+               if (sourceNode?.type === 'source') {
+                    const sourceData = sourceNode.data as unknown as SourceNodeData;
+                    if (!isValidUrl(sourceData.url)) {
+                         console.warn('Cannot connect source node with invalid URL');
+                         return;
+                    }
+               }
                setEdges(eds => addEdge(params, eds));
                saveToLocalStorage();
           },
-          [saveToLocalStorage]
+          [nodes, saveToLocalStorage]
+     );
+
+     const updateNodeData = useCallback(
+          (nodeId: string, data: Partial<SourceNodeData | LayerNodeData>) => {
+               setNodes(nds =>
+                    nds.map(node => {
+                         if (node.id === nodeId) {
+                              return {
+                                   ...node,
+                                   data: {
+                                        ...node.data,
+                                        ...data,
+                                   },
+                              };
+                         }
+                         return node;
+                    })
+               );
+          },
+          []
      );
 
      return {
@@ -93,5 +125,6 @@ export const useFlow = () => {
           loadFromLocalStorage,
           addNode,
           onConnect,
+          updateNodeData,
      };
 };

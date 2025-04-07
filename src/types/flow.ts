@@ -1,21 +1,26 @@
-import { Node, Edge } from '@xyflow/react';
-
 export type NodeType = 'source' | 'layer' | 'intersection';
 
 export interface SourceNodeData {
      url: string;
-     [key: string]: unknown;
 }
 
 export interface LayerNodeData {
-     layerId: string;
-     [key: string]: unknown;
+     layerId: number;
 }
 
 export interface IntersectionNodeData {
-     sourceIds: string[];
-     [key: string]: unknown;
+     operation: 'intersection' | 'difference' | 'union';
 }
 
-export type CustomNode = Node<SourceNodeData | LayerNodeData | IntersectionNodeData>;
-export type CustomEdge = Edge;
+export interface CustomNode {
+     id: string;
+     type: NodeType;
+     position: { x: number; y: number };
+     data: SourceNodeData | LayerNodeData | IntersectionNodeData;
+}
+
+export interface CustomEdge {
+     id: string;
+     source: string;
+     target: string;
+}

@@ -1,59 +1,54 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { useCallback } from 'react';
+import { Box, Typography, Paper } from '@mui/material';
 import { NodeType } from '../types/flow';
 
-interface NodeItemProps {
-     type: NodeType;
-     label: string;
-}
+const nodeTypes: { type: NodeType; label: string }[] = [
+     { type: 'source', label: 'Source' },
+     { type: 'layer', label: 'Layer' },
+     { type: 'intersection', label: 'Intersection' },
+];
 
-const NodeItem = ({ type, label }: NodeItemProps) => {
-     const onDragStart = (event: React.DragEvent, nodeType: NodeType) => {
+export const NodePanel = () => {
+     const onDragStart = useCallback((event: React.DragEvent, nodeType: NodeType) => {
           event.dataTransfer.setData('application/reactflow', nodeType);
           event.dataTransfer.effectAllowed = 'move';
-     };
+     }, []);
 
      return (
           <Box
-               draggable
-               onDragStart={e => onDragStart(e, type)}
-               sx={{
-                    cursor: 'move',
-                    p: 1,
-                    mb: 1,
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    boxShadow: 1,
-                    '&:hover': {
-                         bgcolor: 'action.hover',
-                    },
-               }}
-          >
-               <Typography variant="body2">{label}</Typography>
-          </Box>
-     );
-};
-
-export const NodePanel = () => {
-     return (
-          <Paper
                sx={{
                     position: 'absolute',
-                    top: 10,
                     left: 10,
+                    top: 10,
                     zIndex: 4,
-                    p: 2,
-                    width: 200,
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    boxShadow: 3,
                }}
           >
-               <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                    Nodes
-               </Typography>
-               <NodeItem type="source" label="Source Node" />
-               <NodeItem type="layer" label="Layer Node" />
-               <NodeItem type="intersection" label="Intersection Node" />
-          </Paper>
+               <Paper
+                    sx={{
+                         p: 2,
+                         display: 'flex',
+                         flexDirection: 'column',
+                         gap: 2,
+                    }}
+               >
+                    <Typography variant="h6">Nodes</Typography>
+                    {nodeTypes.map(({ type, label }) => (
+                         <Box
+                              key={type}
+                              sx={{
+                                   p: 2,
+                                   border: '1px solid',
+                                   borderColor: 'divider',
+                                   borderRadius: 1,
+                                   cursor: 'grab',
+                              }}
+                              draggable
+                              onDragStart={e => onDragStart(e, type)}
+                         >
+                              {label}
+                         </Box>
+                    ))}
+               </Paper>
+          </Box>
      );
 };

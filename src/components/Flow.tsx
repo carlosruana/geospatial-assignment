@@ -1,20 +1,46 @@
-import { useCallback } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, NodeTypes } from '@xyflow/react';
+import { useCallback, useState, useMemo } from 'react';
+import { ReactFlow, Background, Controls, MiniMap, NodeTypes, Node } from '@xyflow/react';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
 import { LayerNode } from './nodes/LayerNode';
+import { IntersectionNode } from './nodes/IntersectionNode';
 import { NodePanel } from './NodePanel';
 import { Box } from '@mui/material';
 import { NodeType } from '../types/flow';
 import '@xyflow/react/dist/style.css';
 
-const nodeTypes: NodeTypes = {
-     source: SourceNode,
-     layer: LayerNode,
-};
-
 export const Flow = () => {
-     const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect } = useFlow();
+     const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect, updateNodeData } =
+          useFlow();
+     const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+     const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+          setSelectedNodeId(node.id);
+     }, []);
+
+     const onPaneClick = useCallback(() => {
+          setSelectedNodeId(null);
+     }, []);
+
+     const nodeTypes = useMemo<NodeTypes>(
+          () => ({
+               source: props => (
+                    <SourceNode
+                         id={props.id}
+                         data={props.data}
+                         selected={props.id === selectedNodeId}
+                         updateNodeData={updateNodeData}
+                    />
+               ),
+               layer: props => (
+                    <LayerNode data={props.data} selected={props.id === selectedNodeId} />
+               ),
+               intersection: props => (
+                    <IntersectionNode data={props.data} selected={props.id === selectedNodeId} />
+               ),
+          }),
+          [selectedNodeId, updateNodeData]
+     );
 
      const onDrop = useCallback(
           (event: React.DragEvent) => {
@@ -53,6 +79,8 @@ export const Flow = () => {
                     onDrop={onDrop}
                     onDragOver={onDragOver}
                     nodeTypes={nodeTypes}
+                    onNodeClick={onNodeClick}
+                    onPaneClick={onPaneClick}
                     fitView
                >
                     <Background />
