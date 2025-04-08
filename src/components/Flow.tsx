@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, Node } from '@xyflow/react';
+import { ReactFlow, Background, Controls, MiniMap, Node, useReactFlow } from '@xyflow/react';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
 import { LayerNode } from './nodes/LayerNode';
@@ -17,6 +17,7 @@ const nodeTypes = {
 
 export const Flow = () => {
      const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect } = useFlow();
+     const { screenToFlowPosition } = useReactFlow();
      // eslint-disable-next-line @typescript-eslint/no-unused-vars
      const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -37,15 +38,14 @@ export const Flow = () => {
                     return;
                }
 
-               const reactFlowBounds = event.currentTarget.getBoundingClientRect();
-               const position = {
-                    x: event.clientX - reactFlowBounds.left,
-                    y: event.clientY - reactFlowBounds.top,
-               };
+               const position = screenToFlowPosition({
+                    x: event.clientX,
+                    y: event.clientY,
+               });
 
                addNode(type, position);
           },
-          [addNode]
+          [addNode, screenToFlowPosition]
      );
 
      const onDragOver = useCallback((event: React.DragEvent) => {

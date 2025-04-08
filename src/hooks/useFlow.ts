@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
      NodeChange,
      EdgeChange,
@@ -25,39 +25,37 @@ const isLocalStorageAvailable = () => {
      }
 };
 
-export const useFlow = () => {
-     const [nodes, setNodes] = useState<Node[]>([]);
-     const [edges, setEdges] = useState<Edge[]>([]);
-
-     const saveToLocalStorage = useCallback(() => {
-          if (!isLocalStorageAvailable()) {
-               console.warn('localStorage is not available');
-               return;
+const loadInitialState = () => {
+     if (!isLocalStorageAvailable()) {
+          return { nodes: [], edges: [] };
+     }
+     try {
+          const savedState = localStorage.getItem(STORAGE_KEY);
+          if (savedState) {
+               return JSON.parse(savedState);
           }
-          try {
-               const flowState = { nodes, edges };
-               localStorage.setItem(STORAGE_KEY, JSON.stringify(flowState));
-          } catch (error) {
-               console.error('Error saving to localStorage:', error);
+     } catch (error) {
+          console.error('Error loading from localStorage:', error);
+     }
+     return { nodes: [], edges: [] };
+};
+
+export const useFlow = () => {
+     const initialState = loadInitialState();
+     const [nodes, setNodes] = useState<Node[]>(initialState.nodes);
+     const [edges, setEdges] = useState<Edge[]>(initialState.edges);
+
+     // Save to localStorage whenever nodes or edges change
+     useEffect(() => {
+          if (isLocalStorageAvailable()) {
+               try {
+                    const flowState = { nodes, edges };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(flowState));
+               } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+               }
           }
      }, [nodes, edges]);
-
-     const loadFromLocalStorage = useCallback(() => {
-          if (!isLocalStorageAvailable()) {
-               console.warn('localStorage is not available');
-               return;
-          }
-          try {
-               const savedState = localStorage.getItem(STORAGE_KEY);
-               if (savedState) {
-                    const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedState);
-                    setNodes(savedNodes);
-                    setEdges(savedEdges);
-               }
-          } catch (error) {
-               console.error('Error loading from localStorage:', error);
-          }
-     }, []);
 
      const onNodesChange = useCallback((changes: NodeChange[]) => {
           setNodes(nds => applyNodeChanges(changes, nds));
@@ -67,20 +65,16 @@ export const useFlow = () => {
           setEdges(eds => applyEdgeChanges(changes, eds));
      }, []);
 
-     const addNode = useCallback(
-          (type: NodeType, position: { x: number; y: number }) => {
-               const newNode: Node = {
-                    id: `${type}-${Date.now()}`,
-                    type,
-                    position,
-                    data: type === 'source' ? { url: '' } : { layerId: Date.now() },
-               };
+     const addNode = useCallback((type: NodeType, position: { x: number; y: number }) => {
+          const newNode: Node = {
+               id: `${type}-${Date.now()}`,
+               type,
+               position,
+               data: type === 'source' ? { url: '' } : { layerId: Date.now() },
+          };
 
-               setNodes(nds => [...nds, newNode]);
-               saveToLocalStorage();
-          },
-          [saveToLocalStorage]
-     );
+          setNodes(nds => [...nds, newNode]);
+     }, []);
 
      const onConnect = useCallback(
           (params: Connection) => {
@@ -126,7 +120,6 @@ export const useFlow = () => {
                     // If this is the first connection, allow it
                     if (incomingEdges.length === 0) {
                          setEdges(eds => addEdge(params, eds));
-                         saveToLocalStorage();
                          return;
                     }
 
@@ -164,7 +157,6 @@ export const useFlow = () => {
 
                                    setNodes(nds => [...nds, newLayerNode]);
                                    setEdges(eds => addEdge(params, eds));
-                                   saveToLocalStorage();
                               } else {
                                    console.warn('Intersection operation failed');
                               }
@@ -174,40 +166,33 @@ export const useFlow = () => {
                     }
                } else {
                     setEdges(eds => addEdge(params, eds));
-                    saveToLocalStorage();
                }
           },
-          [nodes, edges, saveToLocalStorage]
+          [nodes, edges]
      );
 
-     const updateNodeData = useCallback(
-          (nodeId: string, data: Record<string, unknown>) => {
-               setNodes(nds =>
-                    nds.map(node => {
-                         if (node.id === nodeId) {
-                              return {
-                                   ...node,
-                                   data: {
-                                        ...node.data,
-                                        ...data,
-                                   },
-                              };
-                         }
-                         return node;
-                    })
-               );
-               saveToLocalStorage();
-          },
-          [saveToLocalStorage]
-     );
+     const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
+          setNodes(nds =>
+               nds.map(node => {
+                    if (node.id === nodeId) {
+                         return {
+                              ...node,
+                              data: {
+                                   ...node.data,
+                                   ...data,
+                              },
+                         };
+                    }
+                    return node;
+               })
+          );
+     }, []);
 
      return {
           nodes,
           edges,
           onNodesChange,
           onEdgesChange,
-          saveToLocalStorage,
-          loadFromLocalStorage,
           addNode,
           onConnect,
           updateNodeData,

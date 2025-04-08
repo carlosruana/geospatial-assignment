@@ -5,6 +5,7 @@ import { Flow } from '../../components/Flow';
 import { GeospatialViewer } from '../../components/GeospatialViewer';
 import { useFlow } from '../../hooks/useFlow';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
+import { ReactFlowProvider } from '@xyflow/react';
 
 export const Workflows = () => {
      const { nodes } = useFlow();
@@ -18,7 +19,13 @@ export const Workflows = () => {
 
      return (
           <Box sx={{ width: '100%', height: '100%', display: 'flex' }}>
-               {!showMap ? <Flow /> : <GeospatialViewer features={features} />}
+               {!showMap ? (
+                    <ReactFlowProvider>
+                         <Flow />
+                    </ReactFlowProvider>
+               ) : (
+                    <GeospatialViewer features={features} />
+               )}
                <IconButton
                     sx={{
                          position: 'absolute',
