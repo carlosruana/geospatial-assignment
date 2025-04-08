@@ -1,27 +1,41 @@
 import { memo, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, Node, NodeProps } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
-import { SourceNodeData } from '../../types/flow';
+//import { SourceNodeData } from '../../types/flow';
 import { isValidUrl } from '../../utils/validation';
+import { useFlow } from '../../hooks/useFlow';
+import { Feature, Polygon, MultiPolygon } from 'geojson';
 
-interface SourceNodeProps {
-     id: string;
-     data: SourceNodeData;
-     selected: boolean;
-     updateNodeData: (nodeId: string, data: Partial<SourceNodeData>) => void;
-}
+type SourceNode = Node<
+     {
+          id: string;
+          url: string;
+          selected: boolean;
+          //updateNodeData: (nodeId: string, data: Partial<SourceNodeData>) => void;
+          geojson?: Feature<Polygon | MultiPolygon>;
+     },
+     'source'
+>;
 
-export const SourceNode = memo(({ id, data, selected, updateNodeData }: SourceNodeProps) => {
+export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) => {
      const [url, setUrl] = useState(data.url);
      const [error, setError] = useState<string | null>(null);
+     const { updateNodeData } = useFlow();
 
-     const handleUrlChange = (newUrl: string) => {
+     const handleUrlChange = async (newUrl: string) => {
           setUrl(newUrl);
           if (newUrl && !isValidUrl(newUrl)) {
                setError('Please enter a valid URL');
           } else {
                setError(null);
-               updateNodeData(id, { url: newUrl });
+               try {
+                    const response = await fetch(newUrl);
+                    const geojson = await response.json();
+                    updateNodeData(id, { url: newUrl, geojson });
+               } catch (error) {
+                    console.error('Error fetching GeoJSON data:', error);
+                    setError('Failed to fetch GeoJSON data');
+               }
           }
      };
 
@@ -46,9 +60,9 @@ export const SourceNode = memo(({ id, data, selected, updateNodeData }: SourceNo
                          error={!!error}
                          helperText={error}
                     />
-                    {!error && url && (
+                    {!error && url && data.geojson && (
                          <Typography variant="caption" color="success.main">
-                              Valid URL
+                              GeoJSON loaded
                          </Typography>
                     )}
                </Box>

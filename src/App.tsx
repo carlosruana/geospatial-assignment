@@ -1,18 +1,17 @@
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { Workflows } from './views/Workflows/Workflows';
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import { theme } from './styles/theme';
 import { Layout } from './components/Layout';
-import { Flow } from './components/Flow';
 
-function App() {
+const App = () => {
      return (
           <ThemeProvider theme={theme}>
                <CssBaseline />
                <Layout>
-                    <Flow />
+                    <Workflows />
                </Layout>
           </ThemeProvider>
      );
-}
+};
 
 export default App;

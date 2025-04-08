@@ -9,10 +9,11 @@ import {
      Node,
      Edge,
 } from '@xyflow/react';
-import { NodeType, SourceNodeData, LayerNodeData, IntersectionNodeData } from '../types/flow';
+import { NodeType, LayerNodeData } from '../types/flow';
 import { STORAGE_KEY } from '../constants/flow';
 import { isValidUrl } from '../utils/validation';
 import { performIntersection } from '../utils/geospatial';
+import { Feature, Polygon, MultiPolygon } from 'geojson';
 
 const isLocalStorageAvailable = () => {
      try {
@@ -87,10 +88,33 @@ export const useFlow = () => {
                const targetNode = nodes.find(node => node.id === params.target);
 
                if (sourceNode?.type === 'source') {
-                    const sourceData = sourceNode.data as unknown as SourceNodeData;
+                    const sourceData = sourceNode.data as {
+                         url: string;
+                         geojson?: Feature<Polygon | MultiPolygon>;
+                    };
                     if (!isValidUrl(sourceData.url)) {
                          console.warn('Cannot connect source node with invalid URL');
                          return;
+                    }
+                    if (!sourceData.geojson) {
+                         console.warn('Source node has no GeoJSON data');
+                         return;
+                    }
+                    if (targetNode?.type === 'layer') {
+                         setNodes(nds =>
+                              nds.map(node => {
+                                   if (node.id === targetNode.id) {
+                                        return {
+                                             ...node,
+                                             data: {
+                                                  ...node.data,
+                                                  geometry: sourceData.geojson,
+                                             },
+                                        };
+                                   }
+                                   return node;
+                              })
+                         );
                     }
                }
 
@@ -157,10 +181,7 @@ export const useFlow = () => {
      );
 
      const updateNodeData = useCallback(
-          (
-               nodeId: string,
-               data: Partial<SourceNodeData | LayerNodeData | IntersectionNodeData>
-          ) => {
+          (nodeId: string, data: Record<string, unknown>) => {
                setNodes(nds =>
                     nds.map(node => {
                          if (node.id === nodeId) {

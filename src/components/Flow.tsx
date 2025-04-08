@@ -1,5 +1,5 @@
-import { useCallback, useState, useMemo } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, NodeTypes, Node } from '@xyflow/react';
+import { useCallback, useState } from 'react';
+import { ReactFlow, Background, Controls, MiniMap, Node } from '@xyflow/react';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
 import { LayerNode } from './nodes/LayerNode';
@@ -9,9 +9,15 @@ import { Box } from '@mui/material';
 import { NodeType } from '../types/flow';
 import '@xyflow/react/dist/style.css';
 
+const nodeTypes = {
+     source: SourceNode,
+     layer: LayerNode,
+     intersection: IntersectionNode,
+};
+
 export const Flow = () => {
-     const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect, updateNodeData } =
-          useFlow();
+     const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect } = useFlow();
+     // eslint-disable-next-line @typescript-eslint/no-unused-vars
      const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
      const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -21,24 +27,6 @@ export const Flow = () => {
      const onPaneClick = useCallback(() => {
           setSelectedNodeId(null);
      }, []);
-
-     const nodeTypes = useMemo<NodeTypes>(
-          () => ({
-               source: props => (
-                    <SourceNode
-                         id={props.id}
-                         data={props.data}
-                         selected={props.id === selectedNodeId}
-                         updateNodeData={updateNodeData}
-                    />
-               ),
-               layer: props => (
-                    <LayerNode data={props.data} selected={props.id === selectedNodeId} />
-               ),
-               intersection: props => <IntersectionNode selected={props.id === selectedNodeId} />,
-          }),
-          [selectedNodeId, updateNodeData]
-     );
 
      const onDrop = useCallback(
           (event: React.DragEvent) => {
@@ -66,25 +54,27 @@ export const Flow = () => {
      }, []);
 
      return (
-          <Box sx={{ width: '100%', height: '100%' }}>
+          <Box sx={{ width: '100%', height: '100%', display: 'flex' }}>
                <NodePanel />
-               <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    onDrop={onDrop}
-                    onDragOver={onDragOver}
-                    nodeTypes={nodeTypes}
-                    onNodeClick={onNodeClick}
-                    onPaneClick={onPaneClick}
-                    fitView
-               >
-                    <Background />
-                    <Controls />
-                    <MiniMap />
-               </ReactFlow>
+               <Box sx={{ flex: 1, position: 'relative' }}>
+                    <ReactFlow
+                         nodes={nodes}
+                         edges={edges}
+                         onNodesChange={onNodesChange}
+                         onEdgesChange={onEdgesChange}
+                         onConnect={onConnect}
+                         onDrop={onDrop}
+                         onDragOver={onDragOver}
+                         nodeTypes={nodeTypes}
+                         onNodeClick={onNodeClick}
+                         onPaneClick={onPaneClick}
+                         fitView
+                    >
+                         <Background />
+                         <Controls />
+                         <MiniMap />
+                    </ReactFlow>
+               </Box>
           </Box>
      );
 };
