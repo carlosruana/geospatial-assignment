@@ -1,17 +1,17 @@
 import { memo } from 'react';
-import { Handle, Position, Node, NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { Box, Typography } from '@mui/material';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
 
-type LayerNode = Node<
-     {
-          layerId: number;
-          geometry?: Feature<Polygon | MultiPolygon>;
-     },
-     'layer'
->;
+type LayerNodeData = {
+     layerId: number;
+     geometry?: Feature<Polygon | MultiPolygon>;
+};
+
+type LayerNode = Node<LayerNodeData, 'layer'>;
 
 export const LayerNode = memo(({ selected, data }: NodeProps<LayerNode>) => {
+     console.log('LayerNode render:', { data, selected });
      return (
           <Box
                sx={{
@@ -25,7 +25,7 @@ export const LayerNode = memo(({ selected, data }: NodeProps<LayerNode>) => {
           >
                <Handle type="target" position={Position.Left} />
                <Typography variant="subtitle2">Layer {data.layerId}</Typography>
-               {data.geometry && (
+               {data.geometry?.type === 'Feature' && (
                     <Typography variant="caption" color="text.secondary">
                          GeoJSON loaded
                     </Typography>

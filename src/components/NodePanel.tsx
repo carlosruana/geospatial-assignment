@@ -10,7 +10,7 @@ const nodeTypes: { type: NodeType; label: string }[] = [
 
 export const NodePanel = () => {
      const onDragStart = useCallback((event: React.DragEvent, nodeType: NodeType) => {
-          event.dataTransfer.setData('application/reactflow', nodeType);
+          event.dataTransfer.setData('application/workflows', nodeType);
           event.dataTransfer.effectAllowed = 'move';
      }, []);
 

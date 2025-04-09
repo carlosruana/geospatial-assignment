@@ -1,11 +1,9 @@
+import { useMemo } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
 import { Box } from '@mui/material';
-
-interface GeospatialViewerProps {
-     features: Feature<Polygon | MultiPolygon>[];
-}
+import { useFlow } from '../hooks/useFlow';
 
 const INITIAL_VIEW_STATE = {
      longitude: -122.41669,
@@ -15,7 +13,15 @@ const INITIAL_VIEW_STATE = {
      bearing: 0,
 };
 
-export const GeospatialViewer = ({ features }: GeospatialViewerProps) => {
+export const GeospatialViewer = () => {
+     const { nodes } = useFlow();
+
+     const features = useMemo(() => {
+          return nodes
+               .filter(node => node.type === 'layer')
+               .map(node => node.data.geometry as Feature<Polygon | MultiPolygon>);
+     }, [nodes]);
+
      const layers = [
           new GeoJsonLayer({
                id: 'geojson-layer',

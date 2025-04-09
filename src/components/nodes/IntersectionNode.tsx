@@ -1,8 +1,10 @@
 import { memo } from 'react';
-import { Handle, Position, Node, NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps, Node } from '@xyflow/react';
 import { Box, Typography } from '@mui/material';
 
-type IntersectionNode = Node<Record<string, never>, 'intersection'>;
+type IntersectionNodeData = Record<string, never>;
+
+type IntersectionNode = Node<IntersectionNodeData, 'intersection'>;
 
 export const IntersectionNode = memo(({ selected }: NodeProps<IntersectionNode>) => {
      return (

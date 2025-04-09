@@ -1,14 +1,29 @@
-import { useCallback, useState } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, Node, useReactFlow } from '@xyflow/react';
+import { useCallback, useState, useEffect } from 'react';
+import {
+     ReactFlow,
+     Background,
+     Controls,
+     MiniMap,
+     Node,
+     Edge,
+     useReactFlow,
+     useNodesState,
+     useEdgesState,
+     Panel,
+     ReactFlowInstance,
+} from '@xyflow/react';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
 import { LayerNode } from './nodes/LayerNode';
 import { IntersectionNode } from './nodes/IntersectionNode';
 import { NodePanel } from './NodePanel';
-import { Box } from '@mui/material';
-import { NodeType } from '../types/flow';
+import { Box, Button } from '@mui/material';
 import '@xyflow/react/dist/style.css';
-
+import { STORAGE_KEY } from '../constants/flow';
+import { NodeType } from '../types/flow';
+import SaveIcon from '@mui/icons-material/Save';
+import RestoreIcon from '@mui/icons-material/Restore';
+import DeleteIcon from '@mui/icons-material/Delete';
 const nodeTypes = {
      source: SourceNode,
      layer: LayerNode,
@@ -16,12 +31,52 @@ const nodeTypes = {
 };
 
 export const Flow = () => {
-     const { nodes, edges, onNodesChange, onEdgesChange, addNode, onConnect } = useFlow();
-     const { screenToFlowPosition } = useReactFlow();
+     const { onConnect, addNode } = useFlow();
+     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+     const [rfInstance, setRfInstance] = useState<ReactFlowInstance<Node, Edge> | null>(null);
+     const { setViewport, screenToFlowPosition } = useReactFlow();
      // eslint-disable-next-line @typescript-eslint/no-unused-vars
      const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-     const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+     const onSave = useCallback(() => {
+          if (rfInstance) {
+               const flow = rfInstance.toObject();
+               localStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
+          }
+     }, [rfInstance]);
+
+     const restoreFlow = useCallback(async () => {
+          const flow = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+
+          if (flow?.viewport) {
+               const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+               setNodes(flow.nodes || []);
+               setEdges(flow.edges || []);
+               setViewport({ x, y, zoom });
+          }
+     }, [setEdges, setNodes, setViewport]);
+
+     const onRestore = useCallback(() => {
+          restoreFlow();
+     }, [restoreFlow]);
+
+     const onClear = useCallback(() => {
+          setNodes([]);
+          setEdges([]);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
+     }, [setEdges, setNodes]);
+
+     //use effect to load initialstate from localStorage
+     useEffect(() => {
+          restoreFlow();
+     }, [restoreFlow]);
+
+     useEffect(() => {
+          console.log('Flow nodes updated:', JSON.stringify(nodes));
+     }, [nodes]);
+
+     const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
           setSelectedNodeId(node.id);
      }, []);
 
@@ -33,8 +88,8 @@ export const Flow = () => {
           (event: React.DragEvent) => {
                event.preventDefault();
 
-               const type = event.dataTransfer.getData('application/reactflow') as NodeType;
-               if (typeof type === 'undefined' || !type) {
+               const type = event.dataTransfer.getData('application/workflows') as NodeType;
+               if (!type || !['source', 'layer', 'intersection'].includes(type)) {
                     return;
                }
 
@@ -44,6 +99,8 @@ export const Flow = () => {
                });
 
                addNode(type, position);
+
+               //setNodes((nds: Node[]) => nds.concat(newNode));
           },
           [addNode, screenToFlowPosition]
      );
@@ -63,6 +120,7 @@ export const Flow = () => {
                          onNodesChange={onNodesChange}
                          onEdgesChange={onEdgesChange}
                          onConnect={onConnect}
+                         onInit={setRfInstance}
                          onDrop={onDrop}
                          onDragOver={onDragOver}
                          nodeTypes={nodeTypes}
@@ -73,6 +131,44 @@ export const Flow = () => {
                          <Background />
                          <Controls />
                          <MiniMap />
+                         <Panel position="bottom-left">
+                              <Box
+                                   sx={{
+                                        display: 'flex',
+                                        gap: 1,
+                                        backgroundColor: 'white',
+                                        padding: 1,
+                                        borderRadius: 1,
+                                        boxShadow: 1,
+                                        marginLeft: 8,
+                                   }}
+                              >
+                                   <Button
+                                        variant="contained"
+                                        size="small"
+                                        onClick={onSave}
+                                        startIcon={<SaveIcon />}
+                                   >
+                                        Save
+                                   </Button>
+                                   <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={onRestore}
+                                        startIcon={<RestoreIcon />}
+                                   >
+                                        Restore
+                                   </Button>
+                                   <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={onClear}
+                                        startIcon={<DeleteIcon />}
+                                   >
+                                        Clear
+                                   </Button>
+                              </Box>
+                         </Panel>
                     </ReactFlow>
                </Box>
           </Box>

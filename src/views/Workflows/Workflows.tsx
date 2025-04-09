@@ -1,46 +1,37 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Box, IconButton } from '@mui/material';
 import { Map as MapIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Flow } from '../../components/Flow';
 import { GeospatialViewer } from '../../components/GeospatialViewer';
-import { useFlow } from '../../hooks/useFlow';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
 import { ReactFlowProvider } from '@xyflow/react';
 
 export const Workflows = () => {
-     const { nodes } = useFlow();
      const [showMap, setShowMap] = useState(false);
-
-     const features = useMemo(() => {
-          return nodes
-               .filter(node => node.type === 'layer')
-               .map(node => node.data.geometry as Feature<Polygon | MultiPolygon>);
-     }, [nodes]);
 
      return (
           <Box sx={{ width: '100%', height: '100%', display: 'flex' }}>
-               {!showMap ? (
-                    <ReactFlowProvider>
-                         <Flow />
-                    </ReactFlowProvider>
-               ) : (
-                    <GeospatialViewer features={features} />
-               )}
-               <IconButton
-                    sx={{
-                         position: 'absolute',
-                         top: 10,
-                         right: 10,
-                         zIndex: 2,
-                         backgroundColor: 'white',
-                         '&:hover': {
+               {/* ReactFlowProvider is required for the Flow component to work with
+               screenToFlowPosition to drag and drop and other features
+               https://reactflow.dev/learn/troubleshooting#001
+               https://xyflow.dev/docs/react-flow-provider */}
+               <ReactFlowProvider>
+                    {!showMap ? <Flow /> : <GeospatialViewer />}
+                    <IconButton
+                         sx={{
+                              position: 'absolute',
+                              top: 10,
+                              right: 10,
+                              zIndex: 2,
                               backgroundColor: 'white',
-                         },
-                    }}
-                    onClick={() => setShowMap(!showMap)}
-               >
-                    {showMap ? <ArrowBackIcon /> : <MapIcon />}
-               </IconButton>
+                              '&:hover': {
+                                   backgroundColor: 'white',
+                              },
+                         }}
+                         onClick={() => setShowMap(!showMap)}
+                    >
+                         {showMap ? <ArrowBackIcon /> : <MapIcon />}
+                    </IconButton>
+               </ReactFlowProvider>
           </Box>
      );
 };
