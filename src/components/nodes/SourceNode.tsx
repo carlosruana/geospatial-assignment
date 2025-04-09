@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Handle, Position, NodeProps, useReactFlow, Node } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
@@ -18,42 +18,54 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) =
           data: JSON.stringify(data),
           selected,
      });
-     const [inputValue, setInputValue] = useState(data.url);
-     const { updateNodeData } = useReactFlow();
+     const [url, setUrl] = useState(data.url);
+     const { updateNodeData, getNodes } = useReactFlow();
 
-     const handleUrlChange = useCallback(
-          (event: React.ChangeEvent<HTMLInputElement>) => {
-               const newUrl = event.target.value;
-               console.log('SourceNode handleUrlChange:', {
-                    newUrl,
-                    currentData: JSON.stringify(data),
+     // Update local state when node data changes
+     useEffect(() => {
+          setUrl(data.url);
+     }, [data.url]);
+
+     // Fetch GeoJSON when URL changes or on initial load
+     useEffect(() => {
+          const fetchData = async () => {
+               console.log('fetchData called for node:', id, {
+                    url,
+                    isValid: isValidUrl(url),
                });
-               setInputValue(newUrl);
 
-               if (!newUrl.trim()) {
-                    console.log('Clearing URL and GeoJSON');
-                    updateNodeData(id, { url: '', geojson: undefined });
-                    return;
-               }
+               if (url && isValidUrl(url)) {
+                    console.log('Attempting to fetch GeoJSON for node:', id);
+                    try {
+                         const geojson = await fetchGeoJSON(url);
+                         console.log('GeoJSON fetched successfully for node:', id, geojson);
 
-               if (isValidUrl(newUrl)) {
-                    console.log('Fetching GeoJSON for URL:', newUrl);
-                    fetchGeoJSON(newUrl)
-                         .then((geojson: Feature<Polygon | MultiPolygon>) => {
-                              console.log('GeoJSON fetched successfully:', geojson);
-                              updateNodeData(id, { url: newUrl, geojson });
-                         })
-                         .catch((error: Error) => {
-                              console.error('Error fetching GeoJSON:', error);
-                              updateNodeData(id, { url: newUrl, geojson: undefined });
-                         });
+                         updateNodeData(id, { url, geojson });
+
+                         // Verify the update by checking all nodes
+                         const nodes = getNodes();
+                         const updatedNode = nodes.find(n => n.id === id);
+                         console.log('Node after update:', updatedNode);
+                    } catch (error) {
+                         console.error('Error fetching GeoJSON:', error);
+                         updateNodeData(id, { url, geojson: undefined });
+                    }
                } else {
-                    console.log('Invalid URL:', newUrl);
-                    updateNodeData(id, { url: newUrl, geojson: undefined });
+                    console.log('Skipping fetch for node:', id, {
+                         reason: !url ? 'no url' : 'invalid url',
+                    });
                }
-          },
-          [id, updateNodeData, data]
-     );
+          };
+          fetchData();
+     }, [url, id, updateNodeData, getNodes]);
+
+     const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+          const newUrl = event.target.value;
+          setUrl(newUrl);
+          if (!newUrl.trim()) {
+               updateNodeData(id, { url: '', geojson: undefined });
+          }
+     };
 
      return (
           <Box
@@ -70,14 +82,13 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) =
                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <TextField
                          label="Source URL"
-                         value={inputValue}
+                         value={url}
                          onChange={handleUrlChange}
+                         fullWidth
                          size="small"
-                         error={!isValidUrl(inputValue) && inputValue !== ''}
+                         error={!isValidUrl(url) && url !== ''}
                          helperText={
-                              !isValidUrl(inputValue) && inputValue !== ''
-                                   ? 'Please enter a valid URL'
-                                   : ''
+                              !isValidUrl(url) && url !== '' ? 'Please enter a valid URL' : ''
                          }
                     />
                     {data.url && data.geojson && (

@@ -7,10 +7,10 @@ import {
      Node,
      Edge,
      useReactFlow,
-     useNodesState,
-     useEdgesState,
      Panel,
      ReactFlowInstance,
+     OnNodesChange,
+     OnEdgesChange,
 } from '@xyflow/react';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
@@ -24,16 +24,31 @@ import { NodeType } from '../types/flow';
 import SaveIcon from '@mui/icons-material/Save';
 import RestoreIcon from '@mui/icons-material/Restore';
 import DeleteIcon from '@mui/icons-material/Delete';
+
 const nodeTypes = {
      source: SourceNode,
      layer: LayerNode,
      intersection: IntersectionNode,
 };
 
-export const Flow = () => {
+interface FlowProps {
+     nodes: Node[];
+     edges: Edge[];
+     setNodes: (nodes: Node[]) => void;
+     setEdges: (edges: Edge[]) => void;
+     onNodesChange: OnNodesChange;
+     onEdgesChange: OnEdgesChange;
+}
+
+export const Flow = ({
+     nodes,
+     edges,
+     setNodes,
+     setEdges,
+     onNodesChange,
+     onEdgesChange,
+}: FlowProps) => {
      const { onConnect, addNode } = useFlow();
-     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
      const [rfInstance, setRfInstance] = useState<ReactFlowInstance<Node, Edge> | null>(null);
      const { setViewport, screenToFlowPosition } = useReactFlow();
      // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -67,11 +82,6 @@ export const Flow = () => {
           localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
      }, [setEdges, setNodes]);
 
-     //use effect to load initialstate from localStorage
-     useEffect(() => {
-          restoreFlow();
-     }, [restoreFlow]);
-
      useEffect(() => {
           console.log('Flow nodes updated:', JSON.stringify(nodes));
      }, [nodes]);
@@ -99,8 +109,6 @@ export const Flow = () => {
                });
 
                addNode(type, position);
-
-               //setNodes((nds: Node[]) => nds.concat(newNode));
           },
           [addNode, screenToFlowPosition]
      );

@@ -1,62 +1,12 @@
 import { useCallback } from 'react';
-import {
-     NodeChange,
-     EdgeChange,
-     applyNodeChanges,
-     applyEdgeChanges,
-     addEdge,
-     Connection,
-     useReactFlow,
-} from '@xyflow/react';
+import { addEdge, Connection, useReactFlow, Node, Edge } from '@xyflow/react';
 import { NodeType } from '../types/flow';
-import { performIntersection } from '../utils/geospatial';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
+import intersect from '@turf/intersect';
+import { featureCollection } from '@turf/helpers';
+import { Polygon, MultiPolygon, Feature } from 'geojson';
 
 export const useFlow = () => {
-     const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
-
-     const onNodesChange = useCallback(
-          (changes: NodeChange[]) => {
-               setNodes(nds => applyNodeChanges(changes, nds));
-               console.log('Nodes changed:', changes);
-          },
-          [setNodes]
-     );
-
-     const onEdgesChange = useCallback(
-          (changes: EdgeChange[]) => {
-               setEdges(eds => {
-                    const newEdges = applyEdgeChanges(changes, eds);
-
-                    // Handle edge removal
-                    changes.forEach(change => {
-                         if (change.type === 'remove') {
-                              const removedEdge = eds.find(edge => edge.id === change.id);
-                              if (removedEdge) {
-                                   // Clear geometry from target node
-                                   setNodes(nds =>
-                                        nds.map(node => {
-                                             if (node.id === removedEdge.target) {
-                                                  return {
-                                                       ...node,
-                                                       data: {
-                                                            ...node.data,
-                                                            geometry: undefined,
-                                                       },
-                                                  };
-                                             }
-                                             return node;
-                                        })
-                                   );
-                              }
-                         }
-                    });
-
-                    return newEdges;
-               });
-          },
-          [setEdges, setNodes]
-     );
+     const { setNodes, setEdges } = useReactFlow();
 
      const addNode = useCallback(
           (type: NodeType, position: { x: number; y: number }) => {
@@ -74,102 +24,96 @@ export const useFlow = () => {
 
      const onConnect = useCallback(
           (params: Connection) => {
-               const nodes = getNodes();
-               const edges = getEdges();
-               const sourceNode = nodes.find(node => node.id === params.source);
-               const targetNode = nodes.find(node => node.id === params.target);
-
-               // Check if target is an intersection node
-               if (targetNode?.type === 'intersection') {
-                    // Get all incoming edges to the intersection node
-                    const incomingEdges = edges.filter(edge => edge.target === targetNode.id);
-
-                    // If this is the first connection, allow it
-                    if (incomingEdges.length === 0) {
-                         setEdges(eds => addEdge(params, eds));
-                         return;
-                    }
-
-                    // If this is the second connection, perform the intersection
-                    if (incomingEdges.length === 1) {
-                         const firstSourceNode = nodes.find(
-                              node => node.id === incomingEdges[0].source
-                         );
-
-                         if (firstSourceNode?.type === 'layer' && sourceNode?.type === 'layer') {
-                              const firstLayerData = firstSourceNode.data as unknown as {
-                                   geometry: Feature<Polygon | MultiPolygon>;
-                              };
-                              const secondLayerData = sourceNode.data as unknown as {
-                                   geometry: Feature<Polygon | MultiPolygon>;
-                              };
-
-                              // Perform the intersection
-                              const result = performIntersection(
-                                   firstLayerData.geometry,
-                                   secondLayerData.geometry
-                              );
-
-                              if (result) {
-                                   // Create a new layer node with the result
-                                   const newLayerNode = {
-                                        id: `layer-${Date.now()}`,
-                                        type: 'layer',
-                                        position: {
-                                             x: targetNode.position.x + 200,
-                                             y: targetNode.position.y,
-                                        },
-                                        data: {
-                                             layerId: Date.now(),
-                                             geometry: result,
-                                        },
-                                   };
-
-                                   setNodes(nds => [...nds, newLayerNode]);
-                                   setEdges(eds => addEdge(params, eds));
-                              } else {
-                                   console.warn('Intersection operation failed');
-                              }
-                         }
-                    } else {
-                         console.warn('Intersection node can only have two inputs');
-                    }
-               } else {
-                    // For regular connections, update target node geometry if source has GeoJSON
-                    if (sourceNode?.type === 'source') {
-                         const sourceData = sourceNode.data as unknown as {
-                              url: string;
-                              geojson?: Feature<Polygon | MultiPolygon>;
-                         };
-                         if (sourceData.geojson) {
-                              setNodes(nds =>
-                                   nds.map(node => {
-                                        if (node.id === params.target) {
-                                             return {
-                                                  ...node,
-                                                  data: {
-                                                       ...node.data,
-                                                       geometry: sourceData.geojson,
-                                                  },
-                                             };
-                                        }
-                                        return node;
-                                   })
-                              );
-                         }
-                    }
-                    setEdges(eds => addEdge(params, eds));
-               }
+               setEdges(eds => addEdge(params, eds));
           },
-          [getNodes, getEdges, setNodes, setEdges]
+          [setEdges]
      );
 
+     const processFlow = (currentNodes: Node[], currentEdges: Edge[]) => {
+          console.log('Processing flow with nodes:', currentNodes);
+          console.log('Processing flow with edges:', currentEdges);
+
+          // Find all layer nodes
+          const layerNodes = currentNodes.filter(node => node.type === 'layer');
+          console.log('Found layer nodes:', layerNodes);
+
+          // For each layer node, find its incoming connections
+          const updatedNodes = currentNodes.map(node => {
+               if (node.type === 'layer') {
+                    const incomingEdges = currentEdges.filter(edge => edge.target === node.id);
+                    console.log(`Incoming edges for layer node ${node.id}:`, incomingEdges);
+
+                    // Find the source node for this layer
+                    const sourceEdge = incomingEdges[0];
+                    if (sourceEdge) {
+                         const sourceNode = currentNodes.find(
+                              node => node.id === sourceEdge.source
+                         );
+                         console.log(`Found source node for layer ${node.id}:`, sourceNode);
+
+                         if (sourceNode) {
+                              if (sourceNode.type === 'source' && sourceNode.data?.geojson) {
+                                   return {
+                                        ...node,
+                                        data: {
+                                             ...node.data,
+                                             geometry: sourceNode.data.geojson,
+                                        },
+                                   };
+                              } else if (sourceNode.type === 'intersection') {
+                                   // Get the incoming edges to the intersection node
+                                   const intersectionIncomingEdges = currentEdges.filter(
+                                        edge => edge.target === sourceNode.id
+                                   );
+
+                                   if (intersectionIncomingEdges.length === 2) {
+                                        const sourceNodes = intersectionIncomingEdges
+                                             .map(edge =>
+                                                  currentNodes.find(node => node.id === edge.source)
+                                             )
+                                             .filter(Boolean);
+
+                                        if (
+                                             sourceNodes.length === 2 &&
+                                             sourceNodes[0]?.data?.geojson &&
+                                             sourceNodes[1]?.data?.geojson
+                                        ) {
+                                             const geom1 = sourceNodes[0].data.geojson as Feature<
+                                                  Polygon | MultiPolygon
+                                             >;
+                                             const geom2 = sourceNodes[1].data.geojson as Feature<
+                                                  Polygon | MultiPolygon
+                                             >;
+
+                                             const intersection = intersect(
+                                                  featureCollection([geom1, geom2])
+                                             );
+                                             console.log('Intersection result:', intersection);
+
+                                             if (intersection) {
+                                                  return {
+                                                       ...node,
+                                                       data: {
+                                                            ...node.data,
+                                                            geometry: intersection,
+                                                       },
+                                                  };
+                                             }
+                                        }
+                                   }
+                              }
+                         }
+                    }
+               }
+               return node;
+          });
+
+          return updatedNodes;
+     };
+
      return {
-          nodes: getNodes(),
-          edges: getEdges(),
-          onNodesChange,
-          onEdgesChange,
           addNode,
           onConnect,
+          processFlow,
      };
 };
