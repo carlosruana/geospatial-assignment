@@ -14,6 +14,8 @@ export const IntersectionNode = memo(({ selected }: NodeProps<IntersectionNode>)
                     bgcolor: 'background.paper',
                     borderRadius: 1,
                     boxShadow: 1,
+                    minWidth: 150,
+                    textAlign: 'center',
                     border: selected ? '2px solid' : '1px solid',
                     borderColor: selected ? 'primary.main' : 'divider',
                }}

@@ -19,51 +19,34 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) =
           selected,
      });
      const [url, setUrl] = useState(data.url);
-     const { updateNodeData, getNodes } = useReactFlow();
+     const { updateNodeData } = useReactFlow();
 
      // Update local state when node data changes
      useEffect(() => {
           setUrl(data.url);
      }, [data.url]);
 
-     // Fetch GeoJSON when URL changes or on initial load
-     useEffect(() => {
-          const fetchData = async () => {
-               console.log('fetchData called for node:', id, {
-                    url,
-                    isValid: isValidUrl(url),
-               });
-
-               if (url && isValidUrl(url)) {
-                    console.log('Attempting to fetch GeoJSON for node:', id);
-                    try {
-                         const geojson = await fetchGeoJSON(url);
-                         console.log('GeoJSON fetched successfully for node:', id, geojson);
-
-                         updateNodeData(id, { url, geojson });
-
-                         // Verify the update by checking all nodes
-                         const nodes = getNodes();
-                         const updatedNode = nodes.find(n => n.id === id);
-                         console.log('Node after update:', updatedNode);
-                    } catch (error) {
-                         console.error('Error fetching GeoJSON:', error);
-                         updateNodeData(id, { url, geojson: undefined });
-                    }
-               } else {
-                    console.log('Skipping fetch for node:', id, {
-                         reason: !url ? 'no url' : 'invalid url',
-                    });
-               }
-          };
-          fetchData();
-     }, [url, id, updateNodeData, getNodes]);
-
      const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
           const newUrl = event.target.value;
           setUrl(newUrl);
-          if (!newUrl.trim()) {
+     };
+
+     const handleUrlBlur = async () => {
+          if (!url.trim()) {
                updateNodeData(id, { url: '', geojson: undefined });
+               return;
+          }
+
+          if (isValidUrl(url)) {
+               console.log('Attempting to fetch GeoJSON for node:', id);
+               try {
+                    const geojson = await fetchGeoJSON(url);
+                    console.log('GeoJSON fetched successfully for node:', id, geojson);
+                    updateNodeData(id, { url, geojson });
+               } catch (error) {
+                    console.error('Error fetching GeoJSON:', error);
+                    updateNodeData(id, { url, geojson: undefined });
+               }
           }
      };
 
@@ -84,6 +67,7 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) =
                          label="Source URL"
                          value={url}
                          onChange={handleUrlChange}
+                         onBlur={handleUrlBlur}
                          fullWidth
                          size="small"
                          error={!isValidUrl(url) && url !== ''}

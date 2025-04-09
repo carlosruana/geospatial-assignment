@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, IconButton } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import { Map as MapIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Flow } from '../../components/Flow';
 import { GeospatialViewer } from '../../components/GeospatialViewer';
@@ -28,21 +28,40 @@ export const Workflows = () => {
                ) : (
                     <GeospatialViewer nodes={nodes} edges={edges} />
                )}
-               <IconButton
+               <Box
+                    onClick={() => setShowMap(!showMap)}
                     sx={{
                          position: 'absolute',
                          top: 10,
                          right: 10,
                          zIndex: 2,
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: 1,
                          backgroundColor: 'white',
+                         padding: '4px 8px',
+                         borderRadius: 1,
+                         boxShadow: 1,
+                         cursor: 'pointer',
                          '&:hover': {
-                              backgroundColor: 'white',
+                              backgroundColor: 'rgba(0, 0, 0, 0.04)',
                          },
                     }}
-                    onClick={() => setShowMap(!showMap)}
                >
-                    {getButtonIcon()}
-               </IconButton>
+                    <IconButton
+                         sx={{
+                              padding: 0,
+                              '&:hover': {
+                                   backgroundColor: 'transparent',
+                              },
+                         }}
+                    >
+                         {getButtonIcon()}
+                    </IconButton>
+                    <Typography variant="body2" color="text.secondary">
+                         {showMap ? 'Back' : 'Map'}
+                    </Typography>
+               </Box>
           </Box>
      );
 };

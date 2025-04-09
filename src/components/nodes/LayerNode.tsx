@@ -10,26 +10,22 @@ type LayerNodeData = {
 
 type LayerNode = Node<LayerNodeData, 'layer'>;
 
-export const LayerNode = memo(({ selected, data }: NodeProps<LayerNode>) => {
-     console.log('LayerNode render:', { data, selected });
+export const LayerNode = memo(({ selected }: NodeProps<LayerNode>) => {
      return (
           <Box
                sx={{
                     p: 2,
-                    border: '1px solid #ddd',
+                    bgcolor: 'background.paper',
                     borderRadius: 1,
-                    backgroundColor: 'white',
+                    boxShadow: 1,
                     minWidth: 150,
-                    borderColor: selected ? '#1976d2' : '#ddd',
+                    textAlign: 'center',
+                    border: selected ? '2px solid' : '1px solid',
+                    borderColor: selected ? 'primary.main' : 'divider',
                }}
           >
                <Handle type="target" position={Position.Left} />
-               <Typography variant="subtitle2">Layer {data.layerId}</Typography>
-               {data.geometry?.type === 'Feature' && (
-                    <Typography variant="caption" color="text.secondary">
-                         GeoJSON loaded
-                    </Typography>
-               )}
+               <Typography variant="subtitle2">Layer</Typography>
           </Box>
      );
 });
