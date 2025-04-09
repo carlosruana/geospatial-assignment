@@ -1,16 +1,9 @@
 import { memo } from 'react';
-import { Handle, Position, NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Box, Typography } from '@mui/material';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
+import type { IntersectionNodeType } from '../../types/flow';
 
-type LayerNodeData = {
-     layerId: number;
-     geometry?: Feature<Polygon | MultiPolygon>;
-};
-
-type LayerNode = Node<LayerNodeData, 'layer'>;
-
-export const LayerNode = memo(({ selected }: NodeProps<LayerNode>) => {
+export const IntersectionNode = memo(({ selected }: NodeProps<IntersectionNodeType>) => {
      return (
           <Box
                sx={{
@@ -25,7 +18,8 @@ export const LayerNode = memo(({ selected }: NodeProps<LayerNode>) => {
                }}
           >
                <Handle type="target" position={Position.Left} />
-               <Typography variant="subtitle2">Layer</Typography>
+               <Handle type="source" position={Position.Right} />
+               <Typography variant="subtitle2">Intersection</Typography>
           </Box>
      );
 });

@@ -1,54 +1,54 @@
-import { memo, useState, useEffect } from 'react';
-import { Handle, Position, NodeProps, useReactFlow, Node } from '@xyflow/react';
+import { memo, useState, useEffect, useCallback } from 'react';
+import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
-import { fetchGeoJSON } from '../../utils/geospatial';
-import { isValidUrl } from '../../utils/validation';
+import { fetchGeoJSON } from '../../../../features/geospatial/utils/geospatial';
+import { isValidUrl } from '../../../../utils/validation';
+import type { SourceNodeType } from '../../types/flow';
 
-type SourceNodeData = {
-     url: string;
-     geojson?: Feature<Polygon | MultiPolygon>;
-};
-
-type SourceNode = Node<SourceNodeData, 'source'>;
-
-export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) => {
-     console.log('SourceNode render:', {
-          id,
-          data: JSON.stringify(data),
-          selected,
-     });
+export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNodeType>) => {
      const [url, setUrl] = useState(data.url);
      const { updateNodeData } = useReactFlow();
 
-     // Update local state when node data changes
      useEffect(() => {
           setUrl(data.url);
      }, [data.url]);
 
-     const handleUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+     const handleUrlChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
           const newUrl = event.target.value;
           setUrl(newUrl);
-     };
+     }, []);
 
-     const handleUrlBlur = async () => {
+     const handleUrlBlur = useCallback(async () => {
           if (!url.trim()) {
                updateNodeData(id, { url: '', geojson: undefined });
                return;
           }
 
           if (isValidUrl(url)) {
-               console.log('Attempting to fetch GeoJSON for node:', id);
                try {
                     const geojson = await fetchGeoJSON(url);
-                    console.log('GeoJSON fetched successfully for node:', id, geojson);
-                    updateNodeData(id, { url, geojson });
+                    updateNodeData(id, { url, geojson, isValid: true });
                } catch (error) {
                     console.error('Error fetching GeoJSON:', error);
-                    updateNodeData(id, { url, geojson: undefined });
+                    updateNodeData(id, {
+                         url,
+                         geojson: undefined,
+                         isValid: false,
+                         error: error instanceof Error ? error.message : 'Failed to fetch GeoJSON',
+                    });
                }
+          } else {
+               updateNodeData(id, {
+                    url,
+                    geojson: undefined,
+                    isValid: false,
+                    error: 'Invalid URL',
+               });
           }
-     };
+     }, [url, id, updateNodeData]);
+
+     const hasError = !isValidUrl(url) && url !== '';
+     const isLoaded = data.url && data.geojson;
 
      return (
           <Box
@@ -70,14 +70,17 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNode>) =
                          onBlur={handleUrlBlur}
                          fullWidth
                          size="small"
-                         error={!isValidUrl(url) && url !== ''}
-                         helperText={
-                              !isValidUrl(url) && url !== '' ? 'Please enter a valid URL' : ''
-                         }
+                         error={hasError}
+                         helperText={hasError ? 'Please enter a valid URL' : ''}
                     />
-                    {data.url && data.geojson && (
+                    {isLoaded && (
                          <Typography variant="caption" color="success.main">
                               GeoJSON loaded
+                         </Typography>
+                    )}
+                    {data.error && (
+                         <Typography variant="caption" color="error.main">
+                              {data.error}
                          </Typography>
                     )}
                </Box>

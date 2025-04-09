@@ -1,12 +1,9 @@
 import { memo } from 'react';
-import { Handle, Position, NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Box, Typography } from '@mui/material';
+import type { LayerNodeType } from '../../types/flow';
 
-type IntersectionNodeData = Record<string, never>;
-
-type IntersectionNode = Node<IntersectionNodeData, 'intersection'>;
-
-export const IntersectionNode = memo(({ selected }: NodeProps<IntersectionNode>) => {
+export const LayerNode = memo(({ selected }: NodeProps<LayerNodeType>) => {
      return (
           <Box
                sx={{
@@ -21,8 +18,7 @@ export const IntersectionNode = memo(({ selected }: NodeProps<IntersectionNode>)
                }}
           >
                <Handle type="target" position={Position.Left} />
-               <Handle type="source" position={Position.Right} />
-               <Typography variant="subtitle2">Intersection</Typography>
+               <Typography variant="subtitle2">Layer</Typography>
           </Box>
      );
 });

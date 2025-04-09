@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { Map as MapIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { Flow } from '../../components/Flow';
-import { GeospatialViewer } from '../../components/GeospatialViewer';
-import { useNodesState, useEdgesState, Node, Edge } from '@xyflow/react';
+import { Flow } from '../../features/flow/components/Flow';
+import { GeospatialViewer } from '../../features/geospatial/components/GeospatialViewer';
+import { useNodesState, useEdgesState } from '@xyflow/react';
+import { CustomNode, CustomEdge } from '../../features/flow/types/flow';
 
 export const Workflows = () => {
      const [showMap, setShowMap] = useState(false);
-     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+     const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
+     const [edges, setEdges, onEdgesChange] = useEdgesState<CustomEdge>([]);
 
      const getButtonIcon = () => {
           return showMap ? <ArrowBackIcon /> : <MapIcon />;

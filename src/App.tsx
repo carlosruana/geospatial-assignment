@@ -1,21 +1,29 @@
 import { Workflows } from './views/Workflows/Workflows';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { CssBaseline, ThemeProvider, Box } from '@mui/material';
 import { theme } from './styles/theme';
-import { Layout } from './components/Layout';
 import { ReactFlowProvider } from '@xyflow/react';
+
 const App = () => {
      return (
           <ThemeProvider theme={theme}>
                <CssBaseline />
-               <Layout>
+               <Box
+                    sx={{
+                         display: 'flex',
+                         flexDirection: 'column',
+                         height: '100vh',
+                         width: '100vw',
+                         overflow: 'hidden',
+                    }}
+               >
                     {/* ReactFlowProvider is required for the Flow component to work with
-               screenToFlowPosition to drag and drop and other features
-               https://reactflow.dev/learn/troubleshooting#001
-               https://xyflow.dev/docs/react-flow-provider */}
+               			screenToFlowPosition to drag and drop and other features
+              			https://reactflow.dev/learn/troubleshooting#001
+              			https://xyflow.dev/docs/react-flow-provider */}
                     <ReactFlowProvider>
                          <Workflows />
                     </ReactFlowProvider>
-               </Layout>
+               </Box>
           </ThemeProvider>
      );
 };

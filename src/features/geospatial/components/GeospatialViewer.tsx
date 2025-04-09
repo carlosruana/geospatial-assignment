@@ -1,7 +1,7 @@
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { Node, Edge } from '@xyflow/react';
-import { useFlow } from '../hooks/useFlow';
+import { useFlow } from '../../../features/flow/hooks/useFlow';
 import { Feature, Polygon, MultiPolygon, Point } from 'geojson';
 import { useMemo } from 'react';
 
@@ -65,20 +65,15 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
                }
           });
 
-          // Calculate center point
+          // Calculate center and zoom level
           const centerLng = (minLng + maxLng) / 2;
           const centerLat = (minLat + maxLat) / 2;
-
-          // Calculate zoom level based on the bounds
-          const lngDiff = maxLng - minLng;
-          const latDiff = maxLat - minLat;
-          const maxDiff = Math.max(lngDiff, latDiff);
-          const zoom = Math.log2(360 / maxDiff) - 1;
+          const zoom = Math.min(15, Math.log2(360 / (maxLng - minLng)) - 1);
 
           return {
                longitude: centerLng,
                latitude: centerLat,
-               zoom: Math.min(zoom, 15), // Cap the zoom level
+               zoom,
                pitch: 0,
                bearing: 0,
           };
@@ -86,17 +81,10 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
 
      const layers = sortedNodes
           .filter(node => {
-               console.log('Checking node:', node.id, 'type:', node.type, 'data:', node.data);
                const geometry = node.data?.geometry || node.data?.geojson;
                return node.type === 'layer' && geometry;
           })
           .map((node, index) => {
-               console.log(
-                    'Creating layer for node:',
-                    node.id,
-                    'with geometry:',
-                    node.data.geometry || node.data.geojson
-               );
                const geometry = node.data?.geometry || node.data?.geojson;
                return new GeoJsonLayer({
                     id: `geojson-layer-${node.id}`,
@@ -113,8 +101,6 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
                     zIndex: index,
                });
           });
-
-     console.log('Created layers:', layers);
 
      return (
           <div style={{ width: '100%', height: '100%' }}>
