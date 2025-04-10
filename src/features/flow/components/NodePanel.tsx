@@ -1,13 +1,69 @@
 import { useCallback } from 'react';
 import { Box, Typography, Paper, TextField } from '@mui/material';
 import { NodeType } from '../types/flow';
-import { Handle, Position } from '@xyflow/react';
 
 const nodeTypes: { type: NodeType; label: string }[] = [
      { type: 'source', label: 'Source URL' },
      { type: 'layer', label: 'Layer' },
      { type: 'intersection', label: 'Intersection' },
 ];
+
+const getNodeStyles = (type: NodeType) => {
+     if (type === 'source') {
+          return {
+               '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    right: -6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: '#555',
+               },
+          };
+     }
+     if (type === 'layer') {
+          return {
+               '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: -6,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: '#555',
+               },
+          };
+     }
+     return {
+          '&::before': {
+               content: '""',
+               position: 'absolute',
+               left: -6,
+               top: '50%',
+               transform: 'translateY(-50%)',
+               width: 8,
+               height: 8,
+               borderRadius: '50%',
+               backgroundColor: '#555',
+          },
+          '&::after': {
+               content: '""',
+               position: 'absolute',
+               right: -6,
+               top: '50%',
+               transform: 'translateY(-50%)',
+               width: 8,
+               height: 8,
+               borderRadius: '50%',
+               backgroundColor: '#555',
+          },
+     };
+};
 
 export const NodePanel = () => {
      const onDragStart = useCallback((event: React.DragEvent, nodeType: NodeType) => {
@@ -47,58 +103,33 @@ export const NodePanel = () => {
                                    minWidth: 150,
                                    position: 'relative',
                                    textAlign: type === 'source' ? 'left' : 'center',
+                                   ...getNodeStyles(type),
                               }}
                               draggable
                               onDragStart={e => onDragStart(e, type)}
                          >
                               {type === 'source' && (
-                                   <>
-                                        <Handle
-                                             type="source"
-                                             position={Position.Right}
-                                             style={{ background: '#555' }}
+                                   <Box
+                                        sx={{
+                                             display: 'flex',
+                                             flexDirection: 'column',
+                                             gap: 1,
+                                        }}
+                                   >
+                                        <TextField
+                                             label={label}
+                                             size="small"
+                                             fullWidth
+                                             disabled
+                                             placeholder="Enter URL"
                                         />
-                                        <Box
-                                             sx={{
-                                                  display: 'flex',
-                                                  flexDirection: 'column',
-                                                  gap: 1,
-                                             }}
-                                        >
-                                             <TextField
-                                                  label={label}
-                                                  size="small"
-                                                  fullWidth
-                                                  disabled
-                                                  placeholder="Enter URL"
-                                             />
-                                        </Box>
-                                   </>
+                                   </Box>
                               )}
                               {type === 'layer' && (
-                                   <>
-                                        <Handle
-                                             type="target"
-                                             position={Position.Left}
-                                             style={{ background: '#555' }}
-                                        />
-                                        <Typography variant="subtitle2">{label}</Typography>
-                                   </>
+                                   <Typography variant="subtitle2">{label}</Typography>
                               )}
                               {type === 'intersection' && (
-                                   <>
-                                        <Handle
-                                             type="target"
-                                             position={Position.Left}
-                                             style={{ background: '#555' }}
-                                        />
-                                        <Handle
-                                             type="source"
-                                             position={Position.Right}
-                                             style={{ background: '#555' }}
-                                        />
-                                        <Typography variant="subtitle2">{label}</Typography>
-                                   </>
+                                   <Typography variant="subtitle2">{label}</Typography>
                               )}
                          </Box>
                     ))}

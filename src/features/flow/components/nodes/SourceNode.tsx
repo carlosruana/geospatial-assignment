@@ -104,7 +104,7 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNodeType
                     )}
                     {isLoaded && !isLoading && (
                          <Typography variant="caption" color="success.main">
-                              GeoJSON loaded
+                              GeoJSON loaded ({data.geojson?.features?.length} features)
                          </Typography>
                     )}
                     {data.error && !isLoading && (

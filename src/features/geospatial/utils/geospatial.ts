@@ -1,6 +1,6 @@
 import intersect from '@turf/intersect';
 import { featureCollection } from '@turf/helpers';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
+import { Feature, Polygon, MultiPolygon, Point, FeatureCollection } from 'geojson';
 
 export const performIntersection = (
      feature1: Feature<Polygon | MultiPolygon>,
@@ -16,7 +16,9 @@ export const performIntersection = (
      }
 };
 
-export const fetchGeoJSON = async (url: string): Promise<Feature<Polygon | MultiPolygon>> => {
+export const fetchGeoJSON = async (
+     url: string
+): Promise<FeatureCollection<Polygon | MultiPolygon | Point>> => {
      console.log('Fetching GeoJSON from URL:', url);
      const response = await fetch(url);
      const data = await response.json();
@@ -29,20 +31,8 @@ export const fetchGeoJSON = async (url: string): Promise<Feature<Polygon | Multi
                throw new Error('Invalid GeoJSON: FeatureCollection has no features');
           }
 
-          // Find the first feature that matches our requirements
-          const feature = data.features.find(
-               (f: Feature) =>
-                    f.type === 'Feature' &&
-                    f.geometry &&
-                    (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon')
-          );
-
-          if (!feature) {
-               throw new Error('Invalid GeoJSON: No Polygon or MultiPolygon features found');
-          }
-
-          console.log('Found suitable feature:', feature);
-          return feature as Feature<Polygon | MultiPolygon>;
+          // Return the entire FeatureCollection
+          return data;
      }
 
      // Handle standard GeoJSON Feature
@@ -50,11 +40,16 @@ export const fetchGeoJSON = async (url: string): Promise<Feature<Polygon | Multi
           console.log('Processing Feature');
           if (
                !data.geometry ||
-               (data.geometry.type !== 'Polygon' && data.geometry.type !== 'MultiPolygon')
+               (data.geometry.type !== 'Polygon' &&
+                    data.geometry.type !== 'MultiPolygon' &&
+                    data.geometry.type !== 'Point')
           ) {
-               throw new Error('Invalid GeoJSON: Feature is not a Polygon or MultiPolygon');
+               throw new Error('Invalid GeoJSON: Feature is not a Polygon, MultiPolygon, or Point');
           }
-          return data as Feature<Polygon | MultiPolygon>;
+          return {
+               type: 'FeatureCollection',
+               features: [data],
+          };
      }
 
      // Handle custom format (array of features)
@@ -82,13 +77,14 @@ export const fetchGeoJSON = async (url: string): Promise<Feature<Polygon | Multi
                return feature;
           });
 
-          // Return the first feature
           if (features.length === 0) {
                throw new Error('No features found in data');
           }
 
-          console.log('Converted to GeoJSON Feature:', features[0]);
-          return features[0];
+          return {
+               type: 'FeatureCollection',
+               features,
+          };
      }
 
      // Handle single custom feature
@@ -106,8 +102,10 @@ export const fetchGeoJSON = async (url: string): Promise<Feature<Polygon | Multi
                     coordinates: [data.contour],
                },
           };
-          console.log('Converted to GeoJSON Feature:', feature);
-          return feature;
+          return {
+               type: 'FeatureCollection',
+               features: [feature],
+          };
      }
 
      throw new Error(

@@ -1,5 +1,7 @@
 import { Edge, Node } from '@xyflow/react';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
+import { Feature, Polygon, MultiPolygon, Point, FeatureCollection } from 'geojson';
+
+export type NodeType = 'source' | 'layer' | 'intersection';
 
 export type NodePosition = {
      x: number;
@@ -18,13 +20,13 @@ export type GeoJSONProperties = {
      [key: string]: string | number | boolean | undefined;
 };
 
-export type GeoJSONFeature = Feature<Polygon | MultiPolygon, GeoJSONProperties>;
+export type GeoJSONFeature = Feature<Polygon | MultiPolygon | Point, GeoJSONProperties>;
 
 export type SourceNodeData = {
      url: string;
-     geojson?: GeoJSONFeature;
-     error?: string;
+     geojson?: FeatureCollection<Polygon | MultiPolygon | Point>;
      isValid?: boolean;
+     error?: string;
 };
 
 export type LayerNodeData = {

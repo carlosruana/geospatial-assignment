@@ -2,7 +2,14 @@ import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { Node, Edge } from '@xyflow/react';
 import { useFlow } from '../../../features/flow/hooks/useFlow';
-import { Feature, Polygon, MultiPolygon, Point } from 'geojson';
+import {
+     Feature,
+     Polygon,
+     MultiPolygon,
+     Point,
+     FeatureCollection,
+     GeoJsonProperties,
+} from 'geojson';
 import { useMemo } from 'react';
 
 interface GeospatialViewerProps {
@@ -23,7 +30,12 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
      const initialViewState = useMemo(() => {
           const features = sortedNodes
                .filter(node => node.type === 'layer' && node.data?.geometry)
-               .map(node => node.data.geometry as Feature<Polygon | MultiPolygon>);
+               .map(
+                    node =>
+                         node.data.geometry as
+                              | Feature<Polygon | MultiPolygon | Point>
+                              | FeatureCollection<Polygon | MultiPolygon | Point>
+               );
 
           if (features.length === 0) {
                return {
@@ -42,26 +54,63 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
           let maxLat = -Infinity;
 
           features.forEach(feature => {
-               if (feature.geometry.type === 'Polygon') {
-                    // Handle Polygon
-                    feature.geometry.coordinates[0].forEach(coord => {
-                         const [lng, lat] = coord;
+               if (!feature) return;
+
+               if (feature.type === 'FeatureCollection') {
+                    feature.features.forEach(f => {
+                         if (!f.geometry) return;
+                         if (f.geometry.type === 'Point') {
+                              const [lng, lat] = f.geometry.coordinates;
+                              minLng = Math.min(minLng, lng);
+                              minLat = Math.min(minLat, lat);
+                              maxLng = Math.max(maxLng, lng);
+                              maxLat = Math.max(maxLat, lat);
+                         } else if (f.geometry.type === 'Polygon') {
+                              f.geometry.coordinates[0].forEach(coord => {
+                                   const [lng, lat] = coord;
+                                   minLng = Math.min(minLng, lng);
+                                   minLat = Math.min(minLat, lat);
+                                   maxLng = Math.max(maxLng, lng);
+                                   maxLat = Math.max(maxLat, lat);
+                              });
+                         } else if (f.geometry.type === 'MultiPolygon') {
+                              f.geometry.coordinates.forEach(polygon => {
+                                   polygon[0].forEach(coord => {
+                                        const [lng, lat] = coord;
+                                        minLng = Math.min(minLng, lng);
+                                        minLat = Math.min(minLat, lat);
+                                        maxLng = Math.max(maxLng, lng);
+                                        maxLat = Math.max(maxLat, lat);
+                                   });
+                              });
+                         }
+                    });
+               } else if (feature.type === 'Feature' && feature.geometry) {
+                    if (feature.geometry.type === 'Point') {
+                         const [lng, lat] = feature.geometry.coordinates;
                          minLng = Math.min(minLng, lng);
                          minLat = Math.min(minLat, lat);
                          maxLng = Math.max(maxLng, lng);
                          maxLat = Math.max(maxLat, lat);
-                    });
-               } else if (feature.geometry.type === 'MultiPolygon') {
-                    // Handle MultiPolygon
-                    feature.geometry.coordinates.forEach(polygon => {
-                         polygon[0].forEach(coord => {
+                    } else if (feature.geometry.type === 'Polygon') {
+                         feature.geometry.coordinates[0].forEach(coord => {
                               const [lng, lat] = coord;
                               minLng = Math.min(minLng, lng);
                               minLat = Math.min(minLat, lat);
                               maxLng = Math.max(maxLng, lng);
                               maxLat = Math.max(maxLat, lat);
                          });
-                    });
+                    } else if (feature.geometry.type === 'MultiPolygon') {
+                         feature.geometry.coordinates.forEach(polygon => {
+                              polygon[0].forEach(coord => {
+                                   const [lng, lat] = coord;
+                                   minLng = Math.min(minLng, lng);
+                                   minLat = Math.min(minLat, lat);
+                                   maxLng = Math.max(maxLng, lng);
+                                   maxLat = Math.max(maxLat, lat);
+                              });
+                         });
+                    }
                }
           });
 
@@ -86,25 +135,74 @@ export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
           })
           .map((node, index) => {
                const geometry = node.data?.geometry || node.data?.geojson;
+               const typedGeometry = geometry as
+                    | Feature<Point | Polygon | MultiPolygon>
+                    | FeatureCollection<Point | Polygon | MultiPolygon>;
+               const features =
+                    typedGeometry.type === 'FeatureCollection'
+                         ? typedGeometry.features
+                         : [typedGeometry];
+
                return new GeoJsonLayer({
                     id: `geojson-layer-${node.id}`,
-                    data: geometry as Feature<Point | Polygon | MultiPolygon>,
+                    data: features,
                     pickable: true,
                     stroked: true,
                     filled: true,
                     extruded: false,
                     pointType: 'circle',
-                    getPointRadius: 100,
-                    getFillColor: [255, 0, 0, 128],
+                    pointRadiusUnits: 'pixels',
+                    getPointRadius: feature => {
+                         if (feature.geometry.type === 'Point') {
+                              return 5; // Smaller radius for points
+                         }
+                         return 0; // No radius for polygons
+                    },
+                    getFillColor: feature => {
+                         if (feature.geometry.type === 'Point') {
+                              return [0, 0, 255, 200]; // Blue for points
+                         }
+                         return [230, 230, 230, 255]; // Red for polygons, opaque opacity
+                    },
                     getLineColor: [255, 0, 0],
                     getLineWidth: 2,
                     zIndex: index,
                });
           });
 
+     const renderTooltip = (info: {
+          object?: Feature<Point | Polygon | MultiPolygon, GeoJsonProperties>;
+     }) => {
+          if (!info?.object || info.object.geometry.type !== 'Point') return null;
+
+          const properties = info.object.properties || {};
+          const name = properties.name || Object.values(properties)[0] || 'Unnamed point';
+
+          return {
+               html: `<div>${name}</div>`,
+               style: {
+                    backgroundColor: '#fff',
+                    padding: '4px 8px',
+                    borderRadius: '2px',
+                    border: '1px solid #e0e0e0',
+                    fontSize: '13px',
+                    color: '#333',
+                    maxWidth: '500px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+               },
+          };
+     };
+
      return (
           <div style={{ width: '100%', height: '100%' }}>
-               <DeckGL initialViewState={initialViewState} controller={true} layers={layers} />
+               <DeckGL
+                    initialViewState={initialViewState}
+                    controller={true}
+                    layers={layers}
+                    getTooltip={renderTooltip}
+               />
           </div>
      );
 };
