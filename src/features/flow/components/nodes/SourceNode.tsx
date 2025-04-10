@@ -1,53 +1,67 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
 import { fetchGeoJSON } from '../../../../features/geospatial/utils/geospatial';
 import { isValidUrl } from '../../../../utils/validation';
 import type { SourceNodeType } from '../../types/flow';
+import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';
 
 export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNodeType>) => {
-     const [url, setUrl] = useState(data.url);
+     const [url, setUrl] = useState(data.url || '');
+     const [isLoading, setIsLoading] = useState(false);
+     const inputRef = useRef<HTMLInputElement>(null);
      const { updateNodeData } = useReactFlow();
 
-     useEffect(() => {
-          setUrl(data.url);
-     }, [data.url]);
-
-     const handleUrlChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-          const newUrl = event.target.value;
+     const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+          const newUrl = e.target.value;
           setUrl(newUrl);
      }, []);
 
      const handleUrlBlur = useCallback(async () => {
-          if (!url.trim()) {
-               updateNodeData(id, { url: '', geojson: undefined });
+          if (!url) {
+               updateNodeData(id, { url: '', geojson: undefined, error: undefined });
                return;
           }
 
-          if (isValidUrl(url)) {
-               try {
-                    const geojson = await fetchGeoJSON(url);
-                    updateNodeData(id, { url, geojson, isValid: true });
-               } catch (error) {
-                    console.error('Error fetching GeoJSON:', error);
-                    updateNodeData(id, {
-                         url,
-                         geojson: undefined,
-                         isValid: false,
-                         error: error instanceof Error ? error.message : 'Failed to fetch GeoJSON',
-                    });
-               }
-          } else {
+          if (!isValidUrl(url)) {
                updateNodeData(id, {
                     url,
                     geojson: undefined,
                     isValid: false,
                     error: 'Invalid URL',
                });
+               return;
+          }
+
+          updateNodeData(id, { url });
+          setIsLoading(true);
+          try {
+               const geojson = await fetchGeoJSON(url);
+               updateNodeData(id, { url, geojson, isValid: true, error: undefined });
+          } catch (error) {
+               console.error('Error fetching GeoJSON:', error);
+               updateNodeData(id, {
+                    url,
+                    geojson: undefined,
+                    isValid: false,
+                    error: error instanceof Error ? error.message : 'Failed to fetch GeoJSON',
+               });
+          } finally {
+               setIsLoading(false);
           }
      }, [url, id, updateNodeData]);
 
-     const hasError = !isValidUrl(url) && url !== '';
+     const handleKeyDown = useCallback(
+          (e: React.KeyboardEvent) => {
+               if (e.key === 'Enter') {
+                    e.preventDefault();
+                    inputRef.current?.blur();
+                    handleUrlBlur();
+               }
+          },
+          [handleUrlBlur]
+     );
+
      const isLoaded = data.url && data.geojson;
 
      return (
@@ -68,17 +82,32 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNodeType
                          value={url}
                          onChange={handleUrlChange}
                          onBlur={handleUrlBlur}
+                         onKeyDown={handleKeyDown}
                          fullWidth
                          size="small"
-                         error={hasError}
-                         helperText={hasError ? 'Please enter a valid URL' : ''}
+                         inputRef={inputRef}
                     />
-                    {isLoaded && (
+                    {isLoading && (
+                         <Box
+                              sx={{
+                                   display: 'flex',
+                                   height: '20px',
+                                   alignItems: 'center',
+                                   gap: 1,
+                              }}
+                         >
+                              <Typography variant="caption" color="text.secondary">
+                                   Loading GeoJSON
+                              </Typography>
+                              <LoadingSpinner />
+                         </Box>
+                    )}
+                    {isLoaded && !isLoading && (
                          <Typography variant="caption" color="success.main">
                               GeoJSON loaded
                          </Typography>
                     )}
-                    {data.error && (
+                    {data.error && !isLoading && (
                          <Typography variant="caption" color="error.main">
                               {data.error}
                          </Typography>
