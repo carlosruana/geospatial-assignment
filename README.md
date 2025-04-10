@@ -1,54 +1,127 @@
-# React + TypeScript + Vite
+# Geospatial Flow Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web application for visualizing and processing geospatial data using a visual flow-based interface. Built with React, TypeScript, React Flow, and deck.gl.
 
-Currently, two official plugins are available:
+## 🌟 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Visual Flow Editor**: Create and edit geospatial data processing workflows using an intuitive node-based interface
+- **GeoJSON Support**: Import and visualize GeoJSON data from URLs
+- **Interactive Map Visualization**: Powered by deck.gl for high-performance rendering of geographic data
+- **Layer Management**: Stack and organize multiple geospatial layers with automatic z-indexing
+- **Real-time Processing**: Process and transform geospatial data in real-time
+- **Modern UI**: Built with Material-UI for a clean, responsive interface
 
-## Expanding the ESLint configuration
+## 🚀 Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend Framework**: React 19 with TypeScript
+- **Build Tool**: Vite
+- **UI Components**: Material-UI v7
+- **Flow Editor**: XY Flow (React Flow)
+- **Map Visualization**: deck.gl
+- **Geospatial Processing**: Turf.js
+- **Testing**:
+     - Unit Tests: Vitest + React Testing Library
+     - E2E Tests: Playwright
+- **Code Quality**:
+     - ESLint
+     - Prettier
+     - Husky for pre-commit hooks
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## 📁 Project Structure
+
+```
+├── e2e/                 # End-to-end tests using Playwright
+├── public/              # Static assets
+├── src/
+│   ├── assets/         # Images, fonts, etc.
+│   ├── features/       # Feature-based modules
+│   │   ├── flow/      # Flow editor feature
+│   │   └── geospatial/# Geospatial visualization feature
+│   ├── shared/        # Shared components and utilities
+│   ├── styles/        # Global styles and themes
+│   ├── test/          # Test setup and utilities
+│   ├── utils/         # Utility functions
+│   └── views/         # Page components
+└── package.json
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Installation
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Clone the repository:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+git clone [repository-url]
+cd geospatial-assignment
 ```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the development server:
+
+```bash
+npm run dev
+```
+
+## 🧪 Testing
+
+- Run unit tests:
+
+```bash
+npm test
+```
+
+- Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
+
+- Run end-to-end tests:
+
+```bash
+npm run test:e2e
+```
+
+- View test coverage:
+
+```bash
+npm run test:coverage
+```
+
+## 🔧 Available Scripts
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run lint`: Run ESLint
+- `npm run format`: Format code with Prettier
+- `npm run test`: Run unit tests
+- `npm run test:e2e`: Run end-to-end tests
+- `npm run prepare`: Install Husky git hooks
+
+## 🚧 Future Improvements
+
+1. **Enhanced Geospatial Operations**:
+
+     - Support for more complex geometric operations (union, difference, etc.)
+     - Custom coordinate system transformations
+     - Support for more geospatial file formats (Shapefile, KML, etc.)
+
+2. **User Experience**:
+
+     - Undo/redo functionality in the flow editor
+     - Layer styling options
+     - Save and load workflow configurations
+     - Export processed data in various formats
+
+3. **Performance Optimizations**:
+
+     - Implement data streaming for large GeoJSON files
+     - Implement layer-level caching
+
+4. **Developer Experience**:
+     - Add Storybook for component documentation
+     - Implement CI/CD pipeline
