@@ -99,6 +99,8 @@ export const SourceNode = memo(({ id, data, selected }: NodeProps<SourceNodeType
                          onChange={handleUrlChange}
                          onBlur={handleUrlBlur}
                          onKeyDown={handleKeyDown}
+                         onMouseDown={e => e.stopPropagation()}
+                         onMouseDownCapture={e => e.stopPropagation()}
                          fullWidth
                          size="small"
                          inputRef={inputRef}
