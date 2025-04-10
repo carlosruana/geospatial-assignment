@@ -16,9 +16,9 @@ A modern web application for visualizing and processing geospatial data using a 
 - **Frontend Framework**: React 19 with TypeScript
 - **Build Tool**: Vite
 - **UI Components**: Material-UI v7
-- **Flow Editor**: XY Flow (React Flow)
+- **Flow Editor**: React Flow (@xyflow/react)
 - **Map Visualization**: deck.gl
-- **Geospatial Processing**: Turf.js
+- **Geospatial Processing (Intersect)**: Turf.js
 - **Testing**:
      - Unit Tests: Vitest + React Testing Library
      - E2E Tests: Playwright
@@ -50,7 +50,7 @@ A modern web application for visualizing and processing geospatial data using a 
 1. Clone the repository:
 
 ```bash
-git clone [repository-url]
+git clone https://github.com/carlosruana/geospatial-assignment
 cd geospatial-assignment
 ```
 
@@ -107,7 +107,6 @@ npm run test:coverage
 1. **Enhanced Geospatial Operations**:
 
      - Support for more complex geometric operations (union, difference, etc.)
-     - Custom coordinate system transformations
      - Support for more geospatial file formats (Shapefile, KML, etc.)
 
 2. **User Experience**:
@@ -120,8 +119,10 @@ npm run test:coverage
 3. **Performance Optimizations**:
 
      - Implement data streaming for large GeoJSON files
-     - Implement layer-level caching
+     - Caching of GeoJSON processed data
 
 4. **Developer Experience**:
      - Add Storybook for component documentation
      - Implement CI/CD pipeline
+     - Add code quality checks (SonarQube)
+     - Add performance monitoring (Sentry)
