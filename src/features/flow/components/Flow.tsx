@@ -177,7 +177,6 @@ export const Flow = ({
                          padding: 1,
                          borderRadius: 1,
                          boxShadow: 1,
-                         marginLeft: 8,
                     }}
                >
                     <Button
@@ -226,9 +225,15 @@ export const Flow = ({
                          fitView
                     >
                          <Background />
-                         <Controls />
+                         <Controls showZoom={true} showFitView={true} showInteractive={true} />
                          <MiniMap />
-                         <Panel position="bottom-left">{panelContent}</Panel>
+                         <Panel
+                              position="bottom-left"
+                              className="panel-offset"
+                              style={{ left: '50px' }}
+                         >
+                              {panelContent}
+                         </Panel>
                     </ReactFlow>
                </Box>
           </Box>
