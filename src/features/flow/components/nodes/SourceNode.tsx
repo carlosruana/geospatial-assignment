@@ -1,4 +1,20 @@
 import { memo, useState, useCallback, useRef } from 'react';
+/**
+ * SourceNode is a custom ReactFlow node that allows users to input GeoJSON URLs.
+ * It serves as a data source for the flow diagram.
+ *
+ * Features:
+ * - URL input field for GeoJSON data sources
+ * - Validation feedback for URL input
+ * - Output handle for connecting to other nodes
+ * - Visual feedback for valid/invalid GeoJSON data
+ *
+ * @component
+ * @param {Object} props - ReactFlow node props
+ * @param {string} props.data.url - The URL input value
+ * @param {boolean} props.data.isValid - Whether the URL points to valid GeoJSON
+ * @param {string} props.data.error - Error message if GeoJSON fetch/parse failed
+ */
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
 import { fetchGeoJSON } from '../../services/geospatial';

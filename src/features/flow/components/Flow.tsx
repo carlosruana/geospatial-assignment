@@ -1,3 +1,17 @@
+/**
+ * Flow is the main component that manages the workflow diagram.
+ * It handles:
+ * - Node and edge management (add, delete, connect)
+ * - Persistence to localStorage
+ * - GeoJSON data fetching for source nodes
+ * - View transitions between flow diagram and map view
+ *
+ * The component uses ReactFlow for the diagram and supports three types of nodes:
+ * 1. Source nodes: For inputting GeoJSON URLs
+ * 2. Layer nodes: For displaying GeoJSON data
+ * 3. Intersection nodes: For computing geometric intersections between two sources
+ */
+
 import { useCallback, useState, useMemo } from 'react';
 import {
      ReactFlow,

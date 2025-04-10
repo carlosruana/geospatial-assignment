@@ -1,3 +1,19 @@
+/**
+ * GeospatialViewer is responsible for rendering GeoJSON data on a map.
+ * It uses DeckGL and the GeoJsonLayer to visualize geographic features.
+ *
+ * Features:
+ * - Renders GeoJSON data from flow nodes
+ * - Supports multiple layer visualization
+ * - Provides hover tooltips with feature properties
+ * - Layer ordering based on node positions in the flow
+ *
+ * @component
+ * @param {Object} props
+ * @param {Node[]} props.nodes - The nodes from the flow diagram
+ * @param {Edge[]} props.edges - The edges connecting the nodes
+ */
+
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { Node, Edge } from '@xyflow/react';

@@ -1,8 +1,27 @@
+/**
+ * Provides functionality for processing geospatial data in the flow diagram.
+ * This hook contains the core logic for handling GeoJSON data and geometric operations.
+ *
+ * Features:
+ * - GeoJSON feature intersection using Turf.js
+ * - Flow processing to update layer nodes with geometry data
+ * - Support for both single features and feature collections
+ * - Error handling for invalid geometries
+ */
+
 import { Node, Edge } from '@xyflow/react';
 import { Feature, Polygon, MultiPolygon, FeatureCollection } from 'geojson';
 import intersect from '@turf/intersect';
 import { featureCollection } from '@turf/helpers';
 
+/**
+ * Performs a geometric intersection between two GeoJSON features.
+ * Uses Turf.js for the intersection calculation.
+ *
+ * @param {Feature<Polygon | MultiPolygon>} feature1 - First feature to intersect
+ * @param {Feature<Polygon | MultiPolygon>} feature2 - Second feature to intersect
+ * @returns {Feature<Polygon | MultiPolygon> | null} The intersection result or null if no intersection
+ */
 export const performIntersection = (
      feature1: Feature<Polygon | MultiPolygon>,
      feature2: Feature<Polygon | MultiPolygon>
@@ -17,7 +36,21 @@ export const performIntersection = (
      }
 };
 
+/**
+ * Hook for processing geospatial data in the flow diagram.
+ * 
+ * @returns {Object} Processing functions
+ * @returns {Function} processFlow - Updates nodes with processed geometry data
+ */
 export const useGeospatialProcessing = () => {
+     /**
+      * Processes the flow diagram to update layer nodes with geometry data.
+      * Handles both direct source connections and intersection nodes.
+      *
+      * @param {Node[]} currentNodes - Current nodes in the flow
+      * @param {Edge[]} currentEdges - Current edges in the flow
+      * @returns {Node[]} Updated nodes with processed geometry data
+      */
      const processFlow = (currentNodes: Node[], currentEdges: Edge[]) => {
           // For each layer node, find its incoming connections
           const updatedNodes = currentNodes.map(node => {
