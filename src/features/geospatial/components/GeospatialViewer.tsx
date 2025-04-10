@@ -1,7 +1,7 @@
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { Node, Edge } from '@xyflow/react';
-import { useFlow } from '../../../features/flow/hooks/useFlow';
+import { useGeospatialProcessing } from '../hooks/useGeospatialProcessing';
 import {
      Feature,
      Polygon,
@@ -18,7 +18,7 @@ interface GeospatialViewerProps {
 }
 
 export const GeospatialViewer = ({ nodes, edges }: GeospatialViewerProps) => {
-     const { processFlow } = useFlow();
+     const { processFlow } = useGeospatialProcessing();
 
      // Process the flow with the provided nodes and edges
      const processedNodes = processFlow(nodes, edges);

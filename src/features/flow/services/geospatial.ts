@@ -1,32 +1,13 @@
-import intersect from '@turf/intersect';
-import { featureCollection } from '@turf/helpers';
 import { Feature, Polygon, MultiPolygon, Point, FeatureCollection } from 'geojson';
-
-export const performIntersection = (
-     feature1: Feature<Polygon | MultiPolygon>,
-     feature2: Feature<Polygon | MultiPolygon>
-): Feature<Polygon | MultiPolygon> | null => {
-     try {
-          const collection = featureCollection([feature1, feature2]);
-          const result = intersect(collection);
-          return result;
-     } catch (error) {
-          console.error('Error performing intersection:', error);
-          return null;
-     }
-};
 
 export const fetchGeoJSON = async (
      url: string
 ): Promise<FeatureCollection<Polygon | MultiPolygon | Point>> => {
-     console.log('Fetching GeoJSON from URL:', url);
      const response = await fetch(url);
      const data = await response.json();
-     console.log('Received data:', JSON.stringify(data, null, 2));
 
      // Handle standard GeoJSON FeatureCollection
      if (data.type === 'FeatureCollection') {
-          console.log('Processing FeatureCollection');
           if (!Array.isArray(data.features) || data.features.length === 0) {
                throw new Error('Invalid GeoJSON: FeatureCollection has no features');
           }
@@ -37,7 +18,6 @@ export const fetchGeoJSON = async (
 
      // Handle standard GeoJSON Feature
      if (data.type === 'Feature') {
-          console.log('Processing Feature');
           if (
                !data.geometry ||
                (data.geometry.type !== 'Polygon' &&
@@ -54,7 +34,6 @@ export const fetchGeoJSON = async (
 
      // Handle custom format (array of features)
      if (Array.isArray(data)) {
-          console.log('Processing array of features');
           // Convert each item to a GeoJSON Feature
           const features = data.map(item => {
                if (!item.contour || !Array.isArray(item.contour)) {
@@ -62,16 +41,14 @@ export const fetchGeoJSON = async (
                }
 
                // Create a GeoJSON Feature
+               // Keep all original properties from the item except 'contour'
+               const { contour, ...properties } = item;
                const feature: Feature<Polygon> = {
                     type: 'Feature',
-                    properties: {
-                         zipcode: item.zipcode,
-                         population: item.population,
-                         area: item.area,
-                    },
+                    properties,
                     geometry: {
                          type: 'Polygon',
-                         coordinates: [item.contour], // Wrap the contour in an array to make it a polygon
+                         coordinates: [contour], // Wrap the contour in an array to make it a polygon
                     },
                };
                return feature;
@@ -89,17 +66,14 @@ export const fetchGeoJSON = async (
 
      // Handle single custom feature
      if (data.contour && Array.isArray(data.contour)) {
-          console.log('Processing single custom feature');
+          // Keep all original properties from the data except 'contour'
+          const { contour, ...properties } = data;
           const feature: Feature<Polygon> = {
                type: 'Feature',
-               properties: {
-                    zipcode: data.zipcode,
-                    population: data.population,
-                    area: data.area,
-               },
+               properties,
                geometry: {
                     type: 'Polygon',
-                    coordinates: [data.contour],
+                    coordinates: [contour],
                },
           };
           return {

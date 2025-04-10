@@ -8,63 +8,6 @@ const nodeTypes: { type: NodeType; label: string }[] = [
      { type: 'intersection', label: 'Intersection' },
 ];
 
-const getNodeStyles = (type: NodeType) => {
-     if (type === 'source') {
-          return {
-               '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    right: -6,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: '#555',
-               },
-          };
-     }
-     if (type === 'layer') {
-          return {
-               '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: -6,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: '#555',
-               },
-          };
-     }
-     return {
-          '&::before': {
-               content: '""',
-               position: 'absolute',
-               left: -6,
-               top: '50%',
-               transform: 'translateY(-50%)',
-               width: 8,
-               height: 8,
-               borderRadius: '50%',
-               backgroundColor: '#555',
-          },
-          '&::after': {
-               content: '""',
-               position: 'absolute',
-               right: -6,
-               top: '50%',
-               transform: 'translateY(-50%)',
-               width: 8,
-               height: 8,
-               borderRadius: '50%',
-               backgroundColor: '#555',
-          },
-     };
-};
-
 export const NodePanel = () => {
      const onDragStart = useCallback((event: React.DragEvent, nodeType: NodeType) => {
           event.dataTransfer.setData('application/workflows', nodeType);
@@ -103,34 +46,67 @@ export const NodePanel = () => {
                                    minWidth: 150,
                                    position: 'relative',
                                    textAlign: type === 'source' ? 'left' : 'center',
-                                   ...getNodeStyles(type),
                               }}
                               draggable
                               onDragStart={e => onDragStart(e, type)}
                          >
-                              {type === 'source' && (
-                                   <Box
-                                        sx={{
-                                             display: 'flex',
-                                             flexDirection: 'column',
-                                             gap: 1,
-                                        }}
-                                   >
-                                        <TextField
-                                             label={label}
-                                             size="small"
-                                             fullWidth
-                                             disabled
-                                             placeholder="Enter URL"
-                                        />
-                                   </Box>
-                              )}
-                              {type === 'layer' && (
-                                   <Typography variant="subtitle2">{label}</Typography>
-                              )}
-                              {type === 'intersection' && (
-                                   <Typography variant="subtitle2">{label}</Typography>
-                              )}
+                              <Box
+                                   sx={{
+                                        position: 'relative',
+                                        '&::before':
+                                             type !== 'source'
+                                                  ? {
+                                                         content: '""',
+                                                         position: 'absolute',
+                                                         left: -16,
+                                                         top: '50%',
+                                                         transform: 'translate(-50%, -50%)',
+                                                         width: 8,
+                                                         height: 8,
+                                                         backgroundColor: '#000',
+                                                         borderRadius: '50%',
+                                                    }
+                                                  : undefined,
+                                        '&::after':
+                                             type !== 'layer'
+                                                  ? {
+                                                         content: '""',
+                                                         position: 'absolute',
+                                                         right: -16,
+                                                         top: '50%',
+                                                         transform: 'translate(50%, -50%)',
+                                                         width: 8,
+                                                         height: 8,
+                                                         backgroundColor: '#000',
+                                                         borderRadius: '50%',
+                                                    }
+                                                  : undefined,
+                                   }}
+                              >
+                                   {type === 'source' && (
+                                        <Box
+                                             sx={{
+                                                  display: 'flex',
+                                                  flexDirection: 'column',
+                                                  gap: 1,
+                                             }}
+                                        >
+                                             <TextField
+                                                  label={label}
+                                                  size="small"
+                                                  fullWidth
+                                                  disabled
+                                                  placeholder="Enter URL"
+                                             />
+                                        </Box>
+                                   )}
+                                   {type === 'layer' && (
+                                        <Typography variant="subtitle2">{label}</Typography>
+                                   )}
+                                   {type === 'intersection' && (
+                                        <Typography variant="subtitle2">{label}</Typography>
+                                   )}
+                              </Box>
                          </Box>
                     ))}
                </Paper>

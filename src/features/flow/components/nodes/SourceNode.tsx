@@ -1,7 +1,7 @@
 import { memo, useState, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps, useReactFlow } from '@xyflow/react';
 import { TextField, Box, Typography } from '@mui/material';
-import { fetchGeoJSON } from '../../../../features/geospatial/utils/geospatial';
+import { fetchGeoJSON } from '../../services/geospatial';
 import { isValidUrl } from '../../../../utils/validation';
 import type { SourceNodeType } from '../../types/flow';
 import { LoadingSpinner } from '../../../../shared/components/LoadingSpinner';

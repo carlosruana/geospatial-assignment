@@ -11,6 +11,7 @@ import {
      OnEdgesChange,
      NodeTypes,
 } from '@xyflow/react';
+import { fetchGeoJSON } from '../services/geospatial';
 import { useFlow } from '../hooks/useFlow';
 import { SourceNode } from './nodes/SourceNode';
 import { LayerNode } from './nodes/LayerNode';
@@ -56,7 +57,15 @@ export const Flow = ({
      const onSave = useCallback(() => {
           if (rfInstance) {
                const flow = rfInstance.toObject();
-               localStorage.setItem(STORAGE_KEY, JSON.stringify(flow));
+               // Remove GeoJSON data before saving to localStorage
+               const flowToSave = {
+                    ...flow,
+                    nodes: flow.nodes.map(node => ({
+                         ...node,
+                         data: node.type === 'source' ? { url: node.data.url } : node.data,
+                    })),
+               };
+               localStorage.setItem(STORAGE_KEY, JSON.stringify(flowToSave));
           }
      }, [rfInstance]);
 
@@ -65,7 +74,43 @@ export const Flow = ({
 
           if (flow?.viewport) {
                const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-               setNodes(flow.nodes || []);
+
+               // Restore nodes and fetch GeoJSON data for source nodes
+               const restoredNodes = await Promise.all(
+                    (flow.nodes || []).map(async (node: CustomNode) => {
+                         if (node.type === 'source' && node.data?.url) {
+                              try {
+                                   const geojson = await fetchGeoJSON(node.data.url);
+                                   return {
+                                        ...node,
+                                        data: {
+                                             ...node.data,
+                                             geojson,
+                                             isValid: true,
+                                             error: undefined,
+                                        },
+                                   };
+                              } catch (error) {
+                                   console.error('Error fetching GeoJSON:', error);
+                                   return {
+                                        ...node,
+                                        data: {
+                                             ...node.data,
+                                             geojson: undefined,
+                                             isValid: false,
+                                             error:
+                                                  error instanceof Error
+                                                       ? error.message
+                                                       : 'Failed to fetch GeoJSON',
+                                        },
+                                   };
+                              }
+                         }
+                         return node;
+                    })
+               );
+
+               setNodes(restoredNodes);
                setEdges(flow.edges || []);
                setViewport({ x, y, zoom });
           }
